@@ -10,7 +10,8 @@ import com.chagui68.multiversegambling.game.GameMeta;
 import com.chagui68.multiversegambling.util.Text;
 import com.chagui68.multiversegambling.world.anim.ArenaShow;
 import com.chagui68.multiversegambling.world.anim.ArenaStage;
-import com.chagui68.multiversegambling.world.anim.WheelShow;
+import com.chagui68.multiversegambling.world.anim.Props;
+import com.chagui68.multiversegambling.world.anim.RaffleShow;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,6 +22,7 @@ import java.util.UUID;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * Raffle with three prizes.
@@ -33,9 +35,10 @@ import org.bukkit.entity.Player;
 public final class RaffleGame extends AbstractGroupGame {
 
     private static final double[] PRIZES = {0.70, 0.20, 0.10};
+    private static final int PREPARE_TICKS = 40;
     private static final int DRAW_TIMER = 100;
 
-    /** Colour of each ticket on the wheel drawn on the arena, cycled when out of colours. */
+    /** Colour of each player's balls in the drum, cycled when out of colours. */
     private static final Material[] SECTOR_COLOURS = {
             Material.RED_CONCRETE, Material.BLUE_CONCRETE, Material.YELLOW_CONCRETE,
             Material.LIME_CONCRETE, Material.MAGENTA_CONCRETE, Material.CYAN_CONCRETE,
@@ -46,7 +49,7 @@ public final class RaffleGame extends AbstractGroupGame {
     private final Map<UUID, Integer> tickets = new LinkedHashMap<>();
     /** Winners of the three prizes, best first. */
     private List<UUID> order = new ArrayList<>();
-    /** Wheel painted on the arena, when there is one. */
+    /** Drum and podium painted on the arena, when there is one. */
     private ArenaShow show;
 
     public RaffleGame(MultiverseGamblingPlugin plugin) {
@@ -132,18 +135,10 @@ public final class RaffleGame extends AbstractGroupGame {
     @Override
     protected void tickRound() {
         timer++;
-        if (timer <= 40) {
-            if (timer % 20 == 0) {
-                soundAll(Sound.BLOCK_NOTE_BLOCK_HAT, 0.5f, 1.2f);
-                actionBarAllKey("group.raffle.preparing");
-            }
-            return;
-        }
-        int elapsed = timer - 40;
-        if (elapsed == 1) {
+        if (timer == 1) {
             // Draw without replacement, weighted by tickets and with provably fair rolls.
-            // It happens once, before the drum turns, so the wheel in the arena can stop
-            // on the ticket that really took the first prize.
+            // The tickets are sold, so it is drawn right away: the drum in the arena then
+            // hands out the prizes to the players that really won them.
             order = new ArrayList<>();
             Map<UUID, Integer> remaining = new LinkedHashMap<>(tickets);
             for (int prize = 0; prize < PRIZES.length && !remaining.isEmpty(); prize++) {
@@ -155,22 +150,31 @@ public final class RaffleGame extends AbstractGroupGame {
                 order.add(winner);
                 remaining.remove(winner);
             }
-            show = startWheelShow(order.isEmpty() ? null : order.get(0));
+            show = startShow();
         }
+        if (timer <= PREPARE_TICKS + DRAW_TIMER && show != null) {
+            show.tick();
+            return;
+        }
+        if (timer <= PREPARE_TICKS) {
+            if (timer % 20 == 0) {
+                soundAll(Sound.BLOCK_NOTE_BLOCK_HAT, 0.5f, 1.2f);
+                actionBarAllKey("group.raffle.preparing");
+            }
+            return;
+        }
+        int elapsed = timer - PREPARE_TICKS;
         if (elapsed <= DRAW_TIMER) {
-            if (show != null) {
-                show.tick();
-            } else {
-                double progress = (double) elapsed / DRAW_TIMER;
-                int wait = 1 + (int) (progress * progress * 8);
-                if (elapsed % wait == 0) {
-                    List<UUID> pool = new ArrayList<>(tickets.keySet());
-                    if (!pool.isEmpty()) {
-                        actionBarAllKey("group.raffle.drawing",
-                                "player", playerName(Rng.pick(pool)),
-                                "pot", plugin.economy().format(pot.total()));
-                        soundAll(Sound.BLOCK_NOTE_BLOCK_HAT, 0.5f, 0.9f + (float) progress);
-                    }
+            // No arena: the draw is told in the action bar instead.
+            double progress = (double) elapsed / DRAW_TIMER;
+            int wait = 1 + (int) (progress * progress * 8);
+            if (elapsed % wait == 0) {
+                List<UUID> pool = new ArrayList<>(tickets.keySet());
+                if (!pool.isEmpty()) {
+                    actionBarAllKey("group.raffle.drawing",
+                            "player", playerName(Rng.pick(pool)),
+                            "pot", plugin.economy().format(pot.total()));
+                    soundAll(Sound.BLOCK_NOTE_BLOCK_HAT, 0.5f, 0.9f + (float) progress);
                 }
             }
             return;
@@ -236,29 +240,42 @@ public final class RaffleGame extends AbstractGroupGame {
         order = new ArrayList<>();
     }
 
-    /** Builds the drum in the arena as a wheel of tickets; {@code null} without an arena. */
-    private ArenaShow startWheelShow(UUID winner) {
+    /** Builds the drum and the podium in the arena; {@code null} without an arena. */
+    private ArenaShow startShow() {
         ArenaStage stage = gatherArena();
         if (stage == null) {
             return null;
         }
         List<UUID> pool = new ArrayList<>(tickets.keySet());
-        List<Material> sectors = new ArrayList<>(pool.size());
-        List<String> names = new ArrayList<>(pool.size());
-        double[] weights = new double[pool.size()];
+        List<RaffleShow.Entry> entries = new ArrayList<>(pool.size());
+        int sold = 0;
         for (int index = 0; index < pool.size(); index++) {
-            sectors.add(isHouse(pool.get(index)) ? Material.BLACK_CONCRETE
-                    : SECTOR_COLOURS[index % SECTOR_COLOURS.length]);
-            names.add(playerName(pool.get(index)));
-            weights[index] = Math.max(1, tickets.getOrDefault(pool.get(index), 1));
+            UUID id = pool.get(index);
+            int bought = Math.max(1, tickets.getOrDefault(id, 1));
+            sold += bought;
+            // More tickets, more balls in the drum: it is drawn like the draw itself.
+            entries.add(new RaffleShow.Entry(playerName(id),
+                    isHouse(id) ? new ItemStack(Material.GOLD_BLOCK) : Props.head(id),
+                    isHouse(id) ? Material.BLACK_CONCRETE : SECTOR_COLOURS[index % SECTOR_COLOURS.length], bought));
         }
-        int landing = winner == null ? 0 : Math.max(0, pool.indexOf(winner));
-        // More tickets, bigger slice: the drum is drawn like the draw itself.
-        WheelShow wheel = new WheelShow(plugin, stage, sectors, landing, DRAW_TIMER)
-                .style(WheelShow.Style.FORTUNE)
-                .labels(names)
-                .weights(weights);
-        wheel.start();
-        return wheel;
+        // Against the house only the first prize is played for.
+        int drawn = houseDuelActive() ? Math.min(1, order.size()) : Math.min(order.size(), PRIZES.length);
+        List<Integer> winners = new ArrayList<>(drawn);
+        List<String> shares = new ArrayList<>(drawn);
+        double share = 0;
+        for (int i = 0; i < drawn; i++) {
+            share += PRIZES[i];
+        }
+        for (int i = 0; i < drawn; i++) {
+            winners.add(pool.indexOf(order.get(i)));
+            shares.add(houseDuelActive() ? Text.multiplier(houseDuelMultiplier(null))
+                    : Math.round(100 * PRIZES[i] / share) + "%");
+        }
+        RaffleShow raffle = new RaffleShow(plugin, stage, entries, winners, shares, PREPARE_TICKS + DRAW_TIMER)
+                .title("&6&l" + Text.strip(displayName(null)).toUpperCase(java.util.Locale.ROOT) + "\n"
+                        + plugin.messages().get("group.raffle.sold", "total", sold,
+                        "price", plugin.economy().format(ticketPrice())));
+        raffle.start();
+        return raffle;
     }
 }

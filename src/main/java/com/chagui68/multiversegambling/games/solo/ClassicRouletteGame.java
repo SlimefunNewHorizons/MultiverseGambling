@@ -13,7 +13,7 @@ import com.chagui68.multiversegambling.session.TimedSession;
 import com.chagui68.multiversegambling.util.Items;
 import com.chagui68.multiversegambling.util.Text;
 import com.chagui68.multiversegambling.world.anim.ArenaStage;
-import com.chagui68.multiversegambling.world.anim.WheelShow;
+import com.chagui68.multiversegambling.world.anim.RouletteShow;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -103,12 +103,13 @@ public final class ClassicRouletteGame extends AbstractSoloGame {
         // shown in the arena only paints the result, it decides nothing.
         int result = wheel.pockets().get(plugin.fair().rollInt(playerId, wheel.pocketCount()));
 
-        ArenaStage stage = arenaFor(player, ArenaStage.BOARD_PITCH);
+        ArenaStage stage = arenaFor(player, RouletteShow::watchSpot);
         if (stage != null) {
-            WheelShow show = new WheelShow(plugin, stage,
-                    sectors(wheel), wheel.pockets().indexOf(result), total)
-                    .style(WheelShow.Style.ROULETTE)
-                    .labels(labels(wheel));
+            RouletteShow show = new RouletteShow(plugin, stage,
+                    sectors(wheel), wheel.wheelOrder().indexOf(result), total)
+                    .labels(labels(wheel))
+                    .numbersCloth(wheel.pocketCount() > 37, result, (bet, spot) -> betName(null, bet, spot))
+                    .bet(type, selection, player.getName(), plugin.economy().format(wager.amount()));
             new TimedSession(plugin, player, id(), total) {
 
                 @Override
@@ -208,22 +209,22 @@ public final class ClassicRouletteGame extends AbstractSoloGame {
     }
 
     /**
-     * Number of each pocket, in the order the wheel paints them on the table.
+     * Number of each pocket, in the order they sit round a real wheel.
      */
     static List<String> labels(RouletteTable wheel) {
         List<String> labels = new ArrayList<>(wheel.pocketCount());
-        for (int pocket : wheel.pockets()) {
+        for (int pocket : wheel.wheelOrder()) {
             labels.add(RouletteTable.label(pocket));
         }
         return labels;
     }
 
     /**
-     * Colour of each pocket, in the order the wheel paints them on the table.
+     * Colour of each pocket, in the order they sit round a real wheel.
      */
     static List<Material> sectors(RouletteTable wheel) {
         List<Material> sectors = new ArrayList<>(wheel.pocketCount());
-        for (int pocket : wheel.pockets()) {
+        for (int pocket : wheel.wheelOrder()) {
             sectors.add(switch (RouletteTable.colorOf(pocket)) {
                 case RED -> Material.RED_CONCRETE;
                 case BLACK -> Material.BLACK_CONCRETE;

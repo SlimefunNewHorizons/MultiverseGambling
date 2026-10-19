@@ -94,6 +94,21 @@ public final class DuelGame extends AbstractGame {
         new RivalGui(plugin, player, this).show();
     }
 
+    @Override
+    public void openAgainstHouse(Player player) {
+        plugin.guis().openBetSelector(player, this, amount -> challengeHouse(player, amount));
+    }
+
+    /**
+     * One chat line after a duel: challenge somebody again, or the house.
+     */
+    private void offerRematch(Player player) {
+        if (player == null || !player.isOnline()) {
+            return;
+        }
+        player.sendMessage(replayLine(player, "replay.prompt"));
+    }
+
     /**
      * Challenges another player.
      */
@@ -197,12 +212,14 @@ public final class DuelGame extends AbstractGame {
                 message(challengerNow, challengerWins ? "duel.won-against" : "duel.lost-against",
                         "player", target.getName(),
                         "amount", plugin.economy().format(amount));
+                offerRematch(challengerNow);
             }
             if (target.isOnline()) {
                 info(target, title(target));
                 message(target, challengerWins ? "duel.lost-against" : "duel.won-against",
                         "player", playerName(challengerId),
                         "amount", plugin.economy().format(amount));
+                offerRematch(target);
             }
         };
         // The money is already settled; the coin in the pavilion only keeps the suspense
@@ -253,6 +270,7 @@ public final class DuelGame extends AbstractGame {
                             java.time.Duration.ofMillis(300))));
             player.playSound(player.getLocation(), wins ? Sound.ENTITY_PLAYER_LEVELUP : Sound.ENTITY_VILLAGER_NO,
                     1.0f, wins ? 1.2f : 0.9f);
+            offerRematch(player);
         };
         ArenaStage stage = arenaFor(player);
         if (stage == null) {

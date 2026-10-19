@@ -17,6 +17,7 @@ el mundo casino `mvgam_casino`.
 | `/mvgam menu` | Igual que el anterior |
 | `/mvgam games [solo\|group]` | Lista el catálogo con los límites de apuesta de cada juego |
 | `/mvgam play <id>` | Juega por su id exacto (`roulette`, `slots`, `lucky-wheel`...) |
+| `/mvgam play <id> house` | Juega un juego de grupo directamente contra la casa (lo que hace el botón del chat) |
 | `/mvgam action <accion>` | Punto de entrada de los **botones del chat** (`shoot`, `reveal`, `horse 3`, `accept`, `decline`) |
 
 Dentro de cada juego hay menús propios: el selector de apuesta permite mitad, doblar o

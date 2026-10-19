@@ -20,7 +20,7 @@ they watch the show. Colour roulette also accepts `/mvgam action color red`, `bl
 | **Jackpot** | `jackpot` | Everybody puts money in and tickets are proportional to the stake; one winner takes it all | 2-24 | 100% − commission |
 | **Hot Bomb** | `hot-bomb` | TNT passes from hand to hand with a drawn fuse; whoever it catches is out and their money stays in the pot | 2-12 | 100% − commission |
 | **Bomb Board** | `bomb-board` | Shared board with hidden bombs; players reveal tiles in turns; the last one standing collects | 2-12 | 100% − commission |
-| **Russian Roulette** | `russian-roulette` | In turns each player pulls the trigger with 1 bullet in 6 chambers; the survivor takes the pot | 2-8 | 100% − commission |
+| **Russian Roulette** | `russian-roulette` | In turns each player pulls the trigger with 1 bullet in 6 chambers, one more bullet every 3 laps of the table; the heads of the players hang in front of the muzzle; the survivor takes the pot | 2-8 | 100% − commission |
 | **Horse Race** | `race` | 8 horses with published odds; backing the favourite pays little, the outsider pays a lot | 2-24 | 98.00% per horse |
 | **Duel 1v1** | `duel` | Challenge somebody for a stake; both put the same in and a coin decides | 2 | 100% − commission |
 | **Raffle** | `raffle` | Tickets at a fixed price and a draw of three prizes: 70%, 20% and 10% of the pot (with two players the two prizes share the whole pot). Only whole tickets are charged | 2-24 | 100% − commission |
@@ -33,13 +33,15 @@ Waiting for a room to fill up is the worst part of a casino, so **every group ga
 played alone against the house**. When the room is empty the bet selector shows a second
 button, **Play against the house**; the lobby also sends an offer with a chat button as soon
 as you are alone (and again when everybody else leaves), and `/mvgam action house` does the
-same. Every duel carries the same house edge as the solo games:
+same. When a round ends every player gets **Play again** and **Against the house** buttons in
+chat (`/mvgam play <id> house`). Every duel carries the same house edge as the solo games:
 
 - **Russian Roulette** — the dealer sits in the other chair and you pull first. The cylinder
   is spun once, so the duel is decided by where the bullets sit: with 1 bullet in 6 chambers
   you win half of the time and a win pays **1.96x**, the same edge as any other bet here. The
   table is unit tested: no combination of `chambers` and `bullets` returns more than the house
-  edge.
+  edge. The extra bullet of every 3 laps only applies to the group round: the duel keeps the
+  bullets it was priced with.
 - **Color Roulette** — the wheel pays your colour directly (2x red or black, 36x green)
   instead of paying you out of a pot of one. The duel starts as soon as you pick the colour.
 - **Jackpot** and **Raffle** — the house matches your stake (or buys as many tickets as you)

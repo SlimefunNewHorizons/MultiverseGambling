@@ -95,8 +95,11 @@ public final class PlinkoShow extends ArenaShow {
     protected void onStart() {
         anchor = local(0, 0, 0);
         buildWall();
-        ball = item(anchor, Material.SNOWBALL, ballPose(0));
+        // The ball faces the camera, so it is moved by teleporting it: an offset in its
+        // transformation would be turned with the camera and fling it off the wall.
+        ball = item(ballSpot(0), Material.SNOWBALL, Props.scaled(ballSize()));
         ball.setBillboard(Display.Billboard.CENTER);
+        ball.setTeleportDuration(1);
         ball.setGlowColorOverride(Color.WHITE);
         ball.setGlowing(true);
         playSound(Sound.BLOCK_NOTE_BLOCK_CHIME, 0.7f, 1.2f);
@@ -105,7 +108,7 @@ public final class PlinkoShow extends ArenaShow {
     @Override
     protected void onFrame(int elapsed, int duration) {
         double level = Math.min(board.rows(), progress(elapsed) * board.rows());
-        Props.animate(ball, ballPose(level), 1);
+        ball.teleport(ballSpot(level));
         int whole = (int) Math.floor(level);
         if (whole != lastLevel && whole < board.levels()) {
             lastLevel = whole;
@@ -123,7 +126,8 @@ public final class PlinkoShow extends ArenaShow {
             return;
         }
         landed = true;
-        Props.animate(ball, ballPose(board.rows()), 2);
+        ball.setTeleportDuration(2);
+        ball.teleport(ballSpot(board.rows()));
         if (bucket < buckets.size()) {
             BlockDisplay plate = buckets.get(bucket);
             if (plate.isValid()) {
@@ -230,14 +234,16 @@ public final class PlinkoShow extends ArenaShow {
 
     // ------------------------------------------------------------------ the ball
 
-    private Transformation ballPose(double level) {
+    /** Where the ball is after {@code level} bounces. */
+    private Location ballSpot(double level) {
         double fraction = level - Math.floor(level);
         // Between two rows the ball hops up off the peg before it drops again.
         double hop = level >= board.rows() ? 0 : Math.sin(fraction * Math.PI) * HOP * board.row();
-        float x = (float) board.ballX(path, level);
-        float y = (float) (board.ballY(level) + hop + 0.12);
-        float size = (float) Math.max(0.35, Math.min(0.55, board.column() * 0.9));
-        return Props.centred(new Vector3f(x, y, BALL_DEPTH), Props.none(), new Vector3f(size, size, size));
+        return local(board.ballX(path, level), board.ballY(level) + hop + 0.12, BALL_DEPTH);
+    }
+
+    private float ballSize() {
+        return (float) Math.max(0.35, Math.min(0.55, board.column() * 0.9));
     }
 
     private Vector3f bucketCentre(int slot) {

@@ -19,6 +19,8 @@ import java.util.UUID;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
 
 /**
  * Turn based Russian roulette.
@@ -37,13 +39,16 @@ public final class RussianRouletteGame extends AbstractGroupGame {
 
     private static final int FIRST_DELAY_TICKS = 40;
     /** Ticks between two pulls of the duel, so the shot is watched and not skipped. */
-    private static final int DUEL_TURN_TICKS = 30;
+    private static final int DUEL_TURN_TICKS = 45;
 
     private final List<UUID> order = new ArrayList<>();
     private final Set<UUID> alive = new LinkedHashSet<>();
     private int turnIndex;
     private int turnTicks;
     private boolean started;
+    /** Full laps of the table in this round, and the bullets they added. */
+    private int laps;
+    private int extraBullets;
     /** Pulls taken in the duel against the house. */
     private int duelTurn;
     /** Chamber that fires first in the duel, counted from 1. */
@@ -65,7 +70,74 @@ public final class RussianRouletteGame extends AbstractGroupGame {
     }
 
     private int bullets() {
-        return Math.min(plugin.config().russianRouletteBullets(), chambers() - 1);
+        return Math.min(plugin.config().russianRouletteBullets() + extraBullets, chambers() - 1);
+    }
+
+    /**
+     * A full lap of the table went by: every few laps one more chamber is loaded, so a
+     * table of lucky players does not go on forever.
+     */
+    private void lapDone() {
+        laps++;
+        int every = plugin.config().russianRouletteBulletEvery();
+        if (every <= 0 || laps % every != 0 || bullets() >= chambers() - 1) {
+            return;
+        }
+        extraBullets++;
+        broadcastPlain("group.russian-roulette.extra-bullet",
+                "laps", laps, "bullets", bullets(), "chambers", chambers(),
+                "chance", Text.percent((double) bullets() / chambers()));
+        soundAll(Sound.ITEM_CROSSBOW_LOADING_END, 1.0f, 0.8f);
+        if (show != null) {
+            show.addBullet();
+        }
+    }
+
+    /** The head of a player, or a skull for the dealer. */
+    private ItemStack headOf(UUID id) {
+        if (isHouse(id)) {
+            return new ItemStack(Material.WITHER_SKELETON_SKULL);
+        }
+        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+        if (head.getItemMeta() instanceof SkullMeta meta) {
+            Player player = online(id);
+            meta.setOwningPlayer(player != null ? player : plugin.getServer().getOfflinePlayer(id));
+            head.setItemMeta(meta);
+        }
+        return head;
+    }
+
+    /** Puts the heads in front of the barrel, whoever shoots next at the muzzle. */
+    private void showLineup(List<UUID> inTurn) {
+        if (show == null) {
+            return;
+        }
+        List<ItemStack> stacks = new ArrayList<>();
+        List<String> names = new ArrayList<>();
+        for (UUID id : inTurn) {
+            stacks.add(headOf(id));
+            names.add(playerName(id));
+        }
+        show.lineup(stacks, names);
+    }
+
+    /** Players still standing, starting with whoever holds the revolver now. */
+    private List<UUID> turnOrder() {
+        List<UUID> out = new ArrayList<>();
+        for (int k = 0; k < order.size(); k++) {
+            UUID id = order.get((turnIndex + k) % order.size());
+            if (alive.contains(id)) {
+                out.add(id);
+            }
+        }
+        return out;
+    }
+
+    /** The duel: the player and the dealer, whoever pulls next first. */
+    private List<UUID> duelOrder() {
+        UUID playerId = houseDuelPlayer();
+        boolean playerNext = (duelTurn + 1) % 2 == 1;
+        return playerNext ? List.of(playerId, FairnessService.HOUSE) : List.of(FairnessService.HOUSE, playerId);
     }
 
     @Override
@@ -95,6 +167,8 @@ public final class RussianRouletteGame extends AbstractGroupGame {
         turnTicks = 0;
         started = false;
         timer = 0;
+        laps = 0;
+        extraBullets = 0;
 
         if (houseDuelActive()) {
             startDuel();
@@ -106,10 +180,13 @@ public final class RussianRouletteGame extends AbstractGroupGame {
         broadcastPlain("group.russian-roulette.revolver",
                 "bullets", bullets(), "chambers", chambers(),
                 "chance", Text.percent((double) bullets() / chambers()));
+        if (plugin.config().russianRouletteBulletEvery() > 0) {
+            broadcastPlain("group.russian-roulette.escalation",
+                    "laps", plugin.config().russianRouletteBulletEvery());
+        }
         broadcastPlain("group.russian-roulette.turn",
                 "player", playerName(current()),
                 "seconds", plugin.config().groupCountdownSeconds());
-        prompt();
 
         ArenaStage stage = gatherArena();
         if (stage != null) {
@@ -117,6 +194,7 @@ public final class RussianRouletteGame extends AbstractGroupGame {
                     Math.max(60, plugin.config().groupCountdownSeconds() * 20 * 4));
             show.start();
         }
+        prompt();
     }
 
     /**
@@ -138,6 +216,7 @@ public final class RussianRouletteGame extends AbstractGroupGame {
             show = new BarrelShow(plugin, stage, chambers(), bullets(),
                     Math.max(60, DUEL_TURN_TICKS * (chambers() + 2)));
             show.start();
+            showLineup(duelOrder());
         }
     }
 
@@ -190,6 +269,7 @@ public final class RussianRouletteGame extends AbstractGroupGame {
         if (!fires) {
             broadcastPlain(playerTurn ? "group.russian-roulette.duel-empty-you"
                     : "group.russian-roulette.duel-empty-house");
+            showLineup(duelOrder());
             return;
         }
 
@@ -304,6 +384,7 @@ public final class RussianRouletteGame extends AbstractGroupGame {
         order.remove(shooter);
         if (turnIndex >= order.size()) {
             turnIndex = 0;
+            lapDone();
         }
         prompt();
     }
@@ -312,6 +393,7 @@ public final class RussianRouletteGame extends AbstractGroupGame {
         turnIndex++;
         if (turnIndex >= order.size()) {
             turnIndex = 0;
+            lapDone();
         }
         prompt();
     }
@@ -320,6 +402,7 @@ public final class RussianRouletteGame extends AbstractGroupGame {
         if (alive.size() <= 1) {
             return;
         }
+        showLineup(turnOrder());
         UUID currentId = current();
         Player player = online(currentId);
         if (player == null) {
@@ -370,6 +453,8 @@ public final class RussianRouletteGame extends AbstractGroupGame {
         }
         if (alive.size() <= 1 && !alive.isEmpty()) {
             settle();
+        } else {
+            showLineup(turnOrder());
         }
     }
 
@@ -386,5 +471,7 @@ public final class RussianRouletteGame extends AbstractGroupGame {
         turnTicks = 0;
         duelTurn = 0;
         started = false;
+        laps = 0;
+        extraBullets = 0;
     }
 }

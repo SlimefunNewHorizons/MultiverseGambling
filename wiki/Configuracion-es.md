@@ -93,6 +93,7 @@ Por juego:
 | `group.bomb-board.seconds-per-turn` | `10` | Tiempo para destapar |
 | `group.hot-bomb.min-seconds` / `max-seconds` | `5` / `30` | Rango de la mecha sorteada |
 | `group.russian-roulette.chambers` / `bullets` | `6` / `1` | Configuración del revólver |
+| `group.russian-roulette.extra-bullet-every-laps` | `3` | Una bala más cada tantas vueltas a la mesa (`0` = nunca) |
 | `group.race.horses` / `steps` | `8` / `60` | Caballos de la carrera y pasos por caballo |
 | `group.raffle.ticket-price` / `max-tickets` | `100` / `20` | Precio de la boleta y tope por jugador |
 | `group.duel.accept-seconds` | `30` | Tiempo para aceptar un reto antes de que caduque |

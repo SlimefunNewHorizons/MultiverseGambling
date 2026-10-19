@@ -143,6 +143,9 @@ group:
   russian-roulette:
     chambers: 6
     bullets: 1
+    # Every this many laps of the table (everybody pulled once) one more chamber is
+    # loaded, up to all but one. 0 keeps the same bullets the whole round.
+    extra-bullet-every-laps: 3
 
   race:
     horses: 8

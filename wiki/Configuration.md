@@ -93,6 +93,7 @@ Per game:
 | `group.bomb-board.seconds-per-turn` | `10` | Time to reveal a tile |
 | `group.hot-bomb.min-seconds` / `max-seconds` | `5` / `30` | Range of the drawn fuse |
 | `group.russian-roulette.chambers` / `bullets` | `6` / `1` | Revolver setup |
+| `group.russian-roulette.extra-bullet-every-laps` | `3` | One more bullet every this many laps of the table (`0` = never) |
 | `group.race.horses` / `steps` | `8` / `60` | Horses in the race and steps per horse |
 | `group.raffle.ticket-price` / `max-tickets` | `100` / `20` | Ticket price and per player cap |
 | `group.duel.accept-seconds` | `30` | Time to accept a challenge before it expires |

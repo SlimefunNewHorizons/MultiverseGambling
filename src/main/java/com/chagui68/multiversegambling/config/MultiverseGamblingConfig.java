@@ -230,6 +230,11 @@ public final class MultiverseGamblingConfig {
         return ranged(cfg.getInt("group.russian-roulette.bullets", 1), 1, russianRouletteChambers() - 1);
     }
 
+    /** Laps of the table after which one more chamber is loaded; 0 never adds one. */
+    public int russianRouletteBulletEvery() {
+        return ranged(cfg.getInt("group.russian-roulette.extra-bullet-every-laps", 3), 0, 100);
+    }
+
     public int horseRaceRunners() {
         return ranged(cfg.getInt("group.race.horses", 8), 2, 16);
     }

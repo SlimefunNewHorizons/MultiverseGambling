@@ -10,7 +10,8 @@ import com.chagui68.multiversegambling.game.GameMeta;
 import com.chagui68.multiversegambling.util.Text;
 import com.chagui68.multiversegambling.world.anim.ArenaShow;
 import com.chagui68.multiversegambling.world.anim.ArenaStage;
-import com.chagui68.multiversegambling.world.anim.WheelShow;
+import com.chagui68.multiversegambling.world.anim.JackpotShow;
+import com.chagui68.multiversegambling.world.anim.Props;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.UUID;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * Shared jackpot.
@@ -29,9 +31,10 @@ import org.bukkit.entity.Player;
  */
 public final class JackpotGame extends AbstractGroupGame {
 
+    private static final int PREPARE_TICKS = 40;
     private static final int SPIN_TICKS = 80;
 
-    /** Colour of each ticket on the wheel drawn on the arena, cycled when out of colours. */
+    /** Colour of each player in the jar and on the strip, cycled when out of colours. */
     private static final Material[] SECTOR_COLOURS = {
             Material.RED_CONCRETE, Material.BLUE_CONCRETE, Material.YELLOW_CONCRETE,
             Material.LIME_CONCRETE, Material.MAGENTA_CONCRETE, Material.CYAN_CONCRETE,
@@ -40,7 +43,7 @@ public final class JackpotGame extends AbstractGroupGame {
     };
 
     private UUID winner;
-    /** Wheel painted on the arena, when there is one. */
+    /** Jar and strip painted on the arena, when there is one. */
     private ArenaShow show;
 
     public JackpotGame(MultiverseGamblingPlugin plugin) {
@@ -95,19 +98,10 @@ public final class JackpotGame extends AbstractGroupGame {
         timer++;
         int elapsed = timer;
 
-        if (elapsed <= 40) {
-            if (elapsed % 20 == 0) {
-                broadcastPlain("group.jackpot.preparing");
-                soundAll(Sound.BLOCK_NOTE_BLOCK_HAT, 0.5f, 1.2f);
-            }
-            return;
-        }
-
-        int spin = elapsed - 40;
-        if (spin == 1) {
+        if (elapsed == 1) {
             // The real draw: tickets proportional to the stake, with provably fair rolls.
-            // It happens once, before the wheel starts, so the ball in the arena can land
-            // on the ticket that really won.
+            // The bets are closed, so it is drawn right away: the show in the arena then
+            // fills the jar and stops its strip on the ticket that really won.
             WeightedTable<UUID> draw = new WeightedTable<>();
             pot.participants().forEach(id -> draw.add(id, Math.max(0.0001, pot.amountOf(id))));
             if (houseDuelActive()) {
@@ -115,22 +109,31 @@ public final class JackpotGame extends AbstractGroupGame {
                 draw.add(FairnessService.HOUSE, Math.max(0.0001, pot.amountOf(houseDuelPlayer())));
             }
             winner = draw.isEmpty() ? null : draw.roll(plugin.fair().roll(FairnessService.HOUSE));
-            show = startWheelShow(winner);
+            show = startShow(winner);
         }
+        if (elapsed <= PREPARE_TICKS + SPIN_TICKS && show != null) {
+            show.tick();
+            return;
+        }
+        if (elapsed <= PREPARE_TICKS) {
+            if (elapsed % 20 == 0) {
+                broadcastPlain("group.jackpot.preparing");
+                soundAll(Sound.BLOCK_NOTE_BLOCK_HAT, 0.5f, 1.2f);
+            }
+            return;
+        }
+        int spin = elapsed - PREPARE_TICKS;
         if (spin <= SPIN_TICKS) {
-            if (show != null) {
-                show.tick();
-            } else {
-                double progress = (double) spin / SPIN_TICKS;
-                int wait = 1 + (int) (progress * progress * 8);
-                if (spin % wait == 0) {
-                    List<UUID> pool = new ArrayList<>(pot.participants());
-                    if (!pool.isEmpty()) {
-                        actionBarAllKey("group.jackpot.drawing",
-                                "player", playerName(Rng.pick(pool)),
-                                "pot", plugin.economy().format(pot.total()));
-                        soundAll(Sound.BLOCK_NOTE_BLOCK_HAT, 0.5f, 0.9f + (float) progress);
-                    }
+            // No arena: the draw is told in the action bar instead.
+            double progress = (double) spin / SPIN_TICKS;
+            int wait = 1 + (int) (progress * progress * 8);
+            if (spin % wait == 0) {
+                List<UUID> pool = new ArrayList<>(pot.participants());
+                if (!pool.isEmpty()) {
+                    actionBarAllKey("group.jackpot.drawing",
+                            "player", playerName(Rng.pick(pool)),
+                            "pot", plugin.economy().format(pot.total()));
+                    soundAll(Sound.BLOCK_NOTE_BLOCK_HAT, 0.5f, 0.9f + (float) progress);
                 }
             }
             return;
@@ -171,8 +174,8 @@ public final class JackpotGame extends AbstractGroupGame {
         endRound();
     }
 
-    /** Builds the wheel of tickets in the arena; {@code null} when there is no arena. */
-    private ArenaShow startWheelShow(UUID winner) {
+    /** Builds the jar and the strip in the arena; {@code null} when there is no arena. */
+    private ArenaShow startShow(UUID winner) {
         ArenaStage stage = gatherArena();
         if (stage == null) {
             return null;
@@ -181,23 +184,23 @@ public final class JackpotGame extends AbstractGroupGame {
         if (houseDuelActive()) {
             pool.add(FairnessService.HOUSE);
         }
-        List<Material> sectors = new ArrayList<>(pool.size());
-        List<String> names = new ArrayList<>(pool.size());
-        double[] stakes = new double[pool.size()];
+        List<JackpotShow.Entry> entries = new ArrayList<>(pool.size());
+        double total = 0;
         for (int index = 0; index < pool.size(); index++) {
             UUID id = pool.get(index);
-            sectors.add(isHouse(id) ? Material.BLACK_CONCRETE : SECTOR_COLOURS[index % SECTOR_COLOURS.length]);
-            names.add(playerName(id));
-            stakes[index] = Math.max(0.0001, isHouse(id) ? pot.amountOf(houseDuelPlayer()) : pot.amountOf(id));
+            double stake = Math.max(0.0001, isHouse(id) ? pot.amountOf(houseDuelPlayer()) : pot.amountOf(id));
+            total += stake;
+            // A bigger stake is a taller band in the jar and a wider cell on the strip,
+            // exactly like the draw.
+            entries.add(new JackpotShow.Entry(playerName(id),
+                    isHouse(id) ? new ItemStack(Material.GOLD_BLOCK) : Props.head(id),
+                    isHouse(id) ? Material.BLACK_CONCRETE : SECTOR_COLOURS[index % SECTOR_COLOURS.length], stake));
         }
         int landing = winner == null ? 0 : Math.max(0, pool.indexOf(winner));
-        // A bigger stake is a bigger slice, exactly like the draw.
-        WheelShow wheel = new WheelShow(plugin, stage, sectors, landing, SPIN_TICKS)
-                .style(WheelShow.Style.FORTUNE)
-                .labels(names)
-                .weights(stakes);
-        wheel.start();
-        return wheel;
+        JackpotShow jackpot = new JackpotShow(plugin, stage, entries, landing, PREPARE_TICKS + SPIN_TICKS)
+                .pot(plugin.economy().format(total));
+        jackpot.start();
+        return jackpot;
     }
 
     @Override

@@ -89,8 +89,9 @@ public final class LuckyWheelGame extends AbstractSoloGame {
         ArenaStage stage = arenaFor(player);
         if (stage != null) {
             WheelShow show = new WheelShow(plugin, stage, sectors(wheel), winner, total)
-                    .style(WheelShow.Style.FORTUNE)
-                    .labels(labels(wheel));
+                    .labels(labels(wheel))
+                    .title(Text.strip(displayName(player)).toUpperCase(java.util.Locale.ROOT))
+                    .paytable(paytable(wheel));
             new TimedSession(plugin, player, id(), total) {
 
                 @Override
@@ -190,17 +191,55 @@ public final class LuckyWheelGame extends AbstractSoloGame {
         return labels;
     }
 
+    /** Colours of the prizes that are neither nothing nor the top one, smallest first. */
+    private static final Material[] TIERS = {Material.LIME_CONCRETE, Material.LIGHT_BLUE_CONCRETE,
+            Material.BLUE_CONCRETE, Material.PURPLE_CONCRETE, Material.MAGENTA_CONCRETE};
+    private static final String[] TIER_CODES = {"&a", "&b", "&9", "&5", "&d"};
+
     /**
-     * Colour of each tile: grey when it pays nothing, gold for the top prize.
+     * Colour of each tile: grey when it pays nothing, gold for the top prize and a colour
+     * a step richer for every prize in between, so the prizes read at a glance.
      */
     static List<Material> sectors(PrizeWheel wheel) {
+        List<Double> tiers = tiers(wheel);
         List<Material> sectors = new ArrayList<>(wheel.size());
         for (int index = 0; index < wheel.size(); index++) {
             double multiplier = wheel.multiplier(index);
             sectors.add(multiplier <= 0 ? Material.GRAY_CONCRETE
-                    : multiplier >= wheel.best() ? Material.GOLD_BLOCK : Material.LIME_CONCRETE);
+                    : multiplier >= wheel.best() ? Material.GOLD_BLOCK
+                    : TIERS[Math.min(TIERS.length - 1, tiers.indexOf(multiplier))]);
         }
         return sectors;
+    }
+
+    /** The prizes between nothing and the top one, smallest first, each once. */
+    private static List<Double> tiers(PrizeWheel wheel) {
+        java.util.TreeSet<Double> tiers = new java.util.TreeSet<>();
+        for (int index = 0; index < wheel.size(); index++) {
+            double multiplier = wheel.multiplier(index);
+            if (multiplier > 0 && multiplier < wheel.best()) {
+                tiers.add(multiplier);
+            }
+        }
+        return new ArrayList<>(tiers);
+    }
+
+    /** The prize board of the booth: every prize, best first, and how many tiles pay it. */
+    static List<String> paytable(PrizeWheel wheel) {
+        List<Double> tiers = tiers(wheel);
+        java.util.TreeMap<Double, Integer> counts = new java.util.TreeMap<>(java.util.Comparator.reverseOrder());
+        for (int index = 0; index < wheel.size(); index++) {
+            counts.merge(wheel.multiplier(index), 1, Integer::sum);
+        }
+        List<String> lines = new ArrayList<>(counts.size());
+        for (java.util.Map.Entry<Double, Integer> entry : counts.entrySet()) {
+            double multiplier = entry.getKey();
+            String code = multiplier <= 0 ? "&7" : multiplier >= wheel.best() ? "&6&l"
+                    : TIER_CODES[Math.min(TIER_CODES.length - 1, tiers.indexOf(multiplier))];
+            lines.add(code + (multiplier <= 0 ? "✖" : Text.multiplier(multiplier)) + "  &7" + entry.getValue()
+                    + "/" + wheel.size());
+        }
+        return lines;
     }
 
     private final class WheelGui extends Gui {

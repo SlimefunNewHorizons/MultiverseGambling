@@ -23,6 +23,15 @@ class RouletteTableTest {
     }
 
     @Test
+    void theRealWheelOrderHoldsEveryPocketOnce() {
+        for (RouletteTable table : new RouletteTable[]{european, american}) {
+            assertEquals(new java.util.HashSet<>(table.pockets()), new java.util.HashSet<>(table.wheelOrder()));
+            assertEquals(table.pocketCount(), table.wheelOrder().size());
+            assertEquals(0, table.wheelOrder().get(0));
+        }
+    }
+
+    @Test
     void theColoursCoverTheWholeWheelWithoutOverlapping() {
         int reds = 0;
         int blacks = 0;

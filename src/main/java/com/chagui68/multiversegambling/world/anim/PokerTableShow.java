@@ -39,6 +39,12 @@ import org.joml.Vector3f;
  * so eight people can have their controls in the same space without getting in each
  * other's way.</p>
  *
+ * <p>The table is laid out in layers so nothing floats in front of anything else: the
+ * cards, chips and their small labels lie on the felt, the board and the pot share one
+ * low sign in the middle, the buttons of a player sit in a single spot just over the rail
+ * in front of their chair (the ones to act on the turn, the seat ones otherwise) and the
+ * name plates hang high over the chairs, above the name tags of the players.</p>
+ *
  * <p>Local frame: the audience stands on {@code +z} (the main gate), the dealer on
  * {@code -z}; seats go round the table clockwise as seen from above, starting on the
  * dealer's left, the way the action goes at a real table.</p>
@@ -59,6 +65,15 @@ public final class PokerTableShow extends ArenaShow {
     /** Where a seated player's vehicle goes. */
     private static final double VEHICLE_Y = 0.55;
     private static final double DEALER_Z = -(B + 0.95);
+    /** Height of the name plates: over the name tag of a seated player. */
+    private static final double PLATE_Y = 3.05;
+    /** Distance from a chair to its buttons: over the rail, within easy reach. */
+    private static final double BUTTON_REACH = 1.05;
+    /** Heights of the two rows of buttons, below the eyes of a seated player. */
+    private static final double LOWER_ROW_Y = 1.15;
+    private static final double UPPER_ROW_Y = 1.5;
+    /** Middle of the sign with the board and the pot. */
+    private static final double SIGN_Z = 0.1;
 
     private static final Color FACE = Color.fromARGB(255, 250, 250, 242);
     private static final Color BACK = Color.fromARGB(255, 150, 22, 28);
@@ -77,6 +92,9 @@ public final class PokerTableShow extends ArenaShow {
         private TextDisplay handLabel;
         private final List<HoloButton> controls = new ArrayList<>();
         private final List<HoloButton> utility = new ArrayList<>();
+        /** The seat buttons, kept so they come back once the turn is over. */
+        private List<HoloButton.Spec> utilitySpecs = List.of();
+        private UUID utilityOwner;
     }
 
     private final Map<Integer, SeatProps> seats = new HashMap<>();
@@ -156,16 +174,18 @@ public final class PokerTableShow extends ArenaShow {
         for (int seat = 0; seat < SEATS; seat++) {
             buildChair(seat);
             SeatProps props = new SeatProps();
-            props.plate = text(local(seatX(seat), 2.5, seatZ(seat)), Text.c("&7—"), Props.scaled(0.8f),
+            props.plate = text(local(seatX(seat), PLATE_Y, seatZ(seat)), Text.c("&7—"), Props.scaled(0.65f),
                     Display.Billboard.CENTER);
             props.plate.setBackgroundColor(PLATE_EMPTY);
             seats.put(seat, props);
         }
         dealer = spawnDealer();
-        boardLabel = text(local(0, 2.25, -0.3), Text.c(""), Props.scaled(1.1f), Display.Billboard.VERTICAL);
+        // One low sign in the middle: the board on top, the pot right under it.
+        boardLabel = text(local(0, TOP + 0.8, SIGN_Z), Text.c(""), Props.scaled(0.75f), Display.Billboard.VERTICAL);
         boardLabel.setBackgroundColor(Props.argb(0, 0, 0, 0));
-        potLabel = text(local(0, 2.85, -0.3), Text.c(""), Props.scaled(0.9f), Display.Billboard.VERTICAL);
-        speech = text(local(0, 2.9, DEALER_Z), Text.c(""), Props.scaled(0.8f), Display.Billboard.CENTER);
+        potLabel = text(local(0, TOP + 0.5, SIGN_Z), Text.c(""), Props.scaled(0.6f), Display.Billboard.VERTICAL);
+        potLabel.setBackgroundColor(Props.argb(0, 0, 0, 0));
+        speech = text(local(0, 3.2, DEALER_Z), Text.c(""), Props.scaled(0.7f), Display.Billboard.CENTER);
         speech.setBackgroundColor(Props.argb(0, 0, 0, 0));
         playSound(Sound.BLOCK_WOOD_PLACE, 0.8f, 1.2f);
     }
@@ -449,7 +469,7 @@ public final class PokerTableShow extends ArenaShow {
 
     /**
      * Deals the two hole cards of a seat: face down for the room, face up for their owner
-     * alone, who also gets a larger copy floating in front of them.
+     * alone (who also reads them in the action bar).
      *
      * @param owner the player of the seat, or {@code null} for the house
      */
@@ -469,26 +489,6 @@ public final class PokerTableShow extends ArenaShow {
             if (owner != null) {
                 flyCard(cards.get(i), false, x, z, rotation, 0.55f, delay + i * 6, owner, null, props.hole);
             }
-        }
-        if (owner != null) {
-            Player viewer = plugin().getServer().getPlayer(owner);
-            double[] near = edge(seat, 1.02);
-            TextDisplay hand = spawn(local(near[0], TOP + 0.3, near[1]), TextDisplay.class, entity -> {
-                HoloButton.privateTo(this, entity, viewer);
-                entity.text(Text.c(""));
-                entity.setBillboard(Display.Billboard.VERTICAL);
-                entity.setBackgroundColor(Props.argb(200, 10, 10, 14));
-                entity.setShadowed(true);
-                entity.setAlignment(TextDisplay.TextAlignment.CENTER);
-                entity.setTransformation(Props.scaled(0.01f));
-            });
-            props.hole.add(hand);
-            later(delay + 14, () -> {
-                if (hand.isValid()) {
-                    hand.text(Text.c(cardsText(cards)));
-                    Props.animate(hand, Props.scaled(0.75f), 6);
-                }
-            });
         }
         later(delay, () -> {
             swing();
@@ -558,9 +558,9 @@ public final class PokerTableShow extends ArenaShow {
             discard(props.handLabel);
         }
         double[] near = edge(seat, 0.8);
-        props.handLabel = text(local(near[0], TOP + 0.55, near[1]),
+        props.handLabel = text(local(near[0], TOP + 0.4, near[1]),
                 Text.c((winner ? "&6&l" : "&f") + cardsText(cards) + "\n" + (winner ? "&e&l" : "&7") + handName),
-                Props.scaled(0.6f), Display.Billboard.VERTICAL);
+                Props.scaled(0.5f), Display.Billboard.VERTICAL);
         props.handLabel.setBackgroundColor(Props.argb(170, 0, 0, 0));
         playSound(Sound.ITEM_BOOK_PAGE_TURN, 1.0f, 1.0f);
     }
@@ -655,7 +655,7 @@ public final class PokerTableShow extends ArenaShow {
         }
         double[] spot = edge(seat, 0.56);
         stack(props.chips, spot[0], spot[1], amount, bigBlind);
-        props.betLabel = text(local(spot[0], TOP + 0.55, spot[1]), Text.c("&e" + label), Props.scaled(0.5f),
+        props.betLabel = text(local(spot[0], TOP + 0.45, spot[1]), Text.c("&e" + label), Props.scaled(0.42f),
                 Display.Billboard.CENTER);
         props.betLabel.setBackgroundColor(Props.argb(140, 0, 0, 0));
         playSound(Sound.BLOCK_CHAIN_PLACE, 0.6f, 1.6f);
@@ -753,7 +753,8 @@ public final class PokerTableShow extends ArenaShow {
 
     /**
      * The buttons of the player to act, for them alone: a lower row (fold, check or
-     * call, all in) and an upper row to size a raise.
+     * call, all in) and an upper row to size a raise. They take the place of the seat
+     * buttons until the turn is over.
      */
     public void controls(int seat, UUID owner, List<HoloButton.Spec> lower, List<HoloButton.Spec> upper) {
         clearControls(seat);
@@ -761,15 +762,19 @@ public final class PokerTableShow extends ArenaShow {
         if (props == null) {
             return;
         }
-        double[] in = inward(seat);
+        removeUtility(props);
         if (!lower.isEmpty()) {
-            props.controls.addAll(addControlRowAt(seatX(seat), seatZ(seat), in[0], in[1], 2.0, 1.3, owner, true,
-                    lower));
+            props.controls.addAll(row(seat, LOWER_ROW_Y, owner, lower));
         }
         if (!upper.isEmpty()) {
-            props.controls.addAll(addControlRowAt(seatX(seat), seatZ(seat), in[0], in[1], 2.0, 1.85, owner, true,
-                    upper));
+            props.controls.addAll(row(seat, UPPER_ROW_Y, owner, upper));
         }
+    }
+
+    /** A private row of buttons on the rail in front of a chair. */
+    private List<HoloButton> row(int seat, double y, UUID owner, List<HoloButton.Spec> specs) {
+        double[] in = inward(seat);
+        return addControlRowAt(seatX(seat), seatZ(seat), in[0], in[1], BUTTON_REACH, y, owner, true, specs);
     }
 
     /**
@@ -787,10 +792,15 @@ public final class PokerTableShow extends ArenaShow {
         if (props == null) {
             return;
         }
+        boolean had = !props.controls.isEmpty();
         for (HoloButton button : props.controls) {
             button.remove();
         }
         props.controls.clear();
+        if (had) {
+            // The turn is over: the seat buttons come back in the same spot.
+            buildUtility(seat, props);
+        }
     }
 
     /**
@@ -801,15 +811,26 @@ public final class PokerTableShow extends ArenaShow {
         if (props == null) {
             return;
         }
+        props.utilityOwner = owner;
+        props.utilitySpecs = owner == null ? List.of() : List.copyOf(specs);
+        removeUtility(props);
+        if (props.controls.isEmpty()) {
+            buildUtility(seat, props);
+        }
+    }
+
+    private void buildUtility(int seat, SeatProps props) {
+        removeUtility(props);
+        if (props.utilityOwner != null && !props.utilitySpecs.isEmpty()) {
+            props.utility.addAll(row(seat, LOWER_ROW_Y, props.utilityOwner, props.utilitySpecs));
+        }
+    }
+
+    private static void removeUtility(SeatProps props) {
         for (HoloButton button : props.utility) {
             button.remove();
         }
         props.utility.clear();
-        if (owner != null && !specs.isEmpty()) {
-            double[] in = inward(seat);
-            props.utility.addAll(addControlRowAt(seatX(seat), seatZ(seat), in[0], in[1], 2.0, 2.4, owner, true,
-                    specs));
-        }
     }
 
     // ------------------------------------------------------------ the dealer

@@ -18,6 +18,7 @@ the casino world `mvgam_casino`.
 | `/mvgam menu` | Same as above |
 | `/mvgam games [solo\|group]` | Lists the catalogue with the betting limits of each game |
 | `/mvgam play <id>` | Plays a game by its exact id (`roulette`, `slots`, `lucky-wheel`...) |
+| `/mvgam play <id> house` | Plays a group game straight against the house (what the chat button runs) |
 | `/mvgam action <action>` | Entry point of the **chat buttons** (`shoot`, `reveal`, `horse 3`, `accept`, `decline`) |
 
 Inside a game, every action has its own menu: the bet selector lets you halve, double or

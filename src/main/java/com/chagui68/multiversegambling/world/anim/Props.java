@@ -128,6 +128,18 @@ public final class Props {
     }
 
     /**
+     * The head of a player, for a show that puts the players themselves on the stage.
+     */
+    public static org.bukkit.inventory.ItemStack head(java.util.UUID player) {
+        org.bukkit.inventory.ItemStack head = new org.bukkit.inventory.ItemStack(Material.PLAYER_HEAD);
+        if (head.getItemMeta() instanceof org.bukkit.inventory.meta.SkullMeta meta) {
+            meta.setOwningPlayer(org.bukkit.Bukkit.getOfflinePlayer(player));
+            head.setItemMeta(meta);
+        }
+        return head;
+    }
+
+    /**
      * ARGB colour for text backgrounds.
      */
     public static Color argb(int alpha, int red, int green, int blue) {

@@ -157,12 +157,7 @@ public abstract class AbstractSoloGame extends AbstractGame {
         if (!player.isOnline()) {
             return;
         }
-        player.sendMessage(Text.c(plugin.messages().forSender(player, "games.play-again-prompt"))
-                .append(Text.button(
-                        plugin.messages().forSender(player, "games.play-again-button"),
-                        "/mvgam play " + id(),
-                        plugin.messages().forSender(player, "games.play-again-hover",
-                                "game", displayName(player)))));
+        player.sendMessage(replayLine(player, "replay.prompt"));
     }
 
     /**

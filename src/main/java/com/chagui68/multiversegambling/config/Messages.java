@@ -56,7 +56,15 @@ public final class Messages {
             if (!file.exists()) {
                 plugin.saveResource("lang/" + language.fileName(), false);
             }
-            bundles.put(language.code(), YamlConfiguration.loadConfiguration(file));
+            YamlConfiguration loaded = YamlConfiguration.loadConfiguration(file);
+            // A key added by a newer build falls back to the text shipped in the jar, so a
+            // file saved by an older version never shows a raw key.
+            java.io.InputStream shipped = plugin.getResource("lang/" + language.fileName());
+            if (shipped != null) {
+                loaded.setDefaults(YamlConfiguration.loadConfiguration(
+                        new java.io.InputStreamReader(shipped, java.nio.charset.StandardCharsets.UTF_8)));
+            }
+            bundles.put(language.code(), loaded);
         }
         File[] extra = folder.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".yml"));
         if (extra != null) {

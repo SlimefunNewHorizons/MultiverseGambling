@@ -78,6 +78,22 @@ public final class RouletteTable {
         return pockets;
     }
 
+    /**
+     * The pockets in the order they sit round a real wheel, clockwise from the zero.
+     * Only for drawing the wheel: draws and payouts use {@link #pockets()}.
+     */
+    public List<Integer> wheelOrder() {
+        return pockets.size() > 37 ? AMERICAN_WHEEL : EUROPEAN_WHEEL;
+    }
+
+    private static final List<Integer> EUROPEAN_WHEEL = List.of(
+            0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10,
+            5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26);
+
+    private static final List<Integer> AMERICAN_WHEEL = List.of(
+            0, 28, 9, 26, 30, 11, 7, 20, 32, 17, 5, 22, 34, 15, 3, 24, 36, 13, 1,
+            DOUBLE_ZERO, 27, 10, 25, 29, 12, 8, 19, 31, 18, 6, 21, 33, 16, 4, 23, 35, 14, 2);
+
     public int pocketCount() {
         return pockets.size();
     }

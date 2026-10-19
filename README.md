@@ -477,6 +477,7 @@ bomb round or a horse race can be audited from start to finish.
 | `/mvgam` | Opens the main menu with the two tabs |
 | `/mvgam games [solo\|group]` | Lists the catalogue with its betting limits |
 | `/mvgam play <id>` | Plays a game by its exact id |
+| `/mvgam play <id> house` | Plays a group game straight against the house |
 | `/mvgam action <action>` | Entry point for the **chat buttons** (shoot, horse 3, accept...) |
 | `/mvgam balance [player]` | Shows the balance |
 | `/mvgam stats [player]` | Statistics: games, real return, favourite game |

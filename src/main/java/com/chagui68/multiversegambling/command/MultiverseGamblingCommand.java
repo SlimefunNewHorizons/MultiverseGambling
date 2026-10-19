@@ -196,15 +196,25 @@ public final class MultiverseGamblingCommand implements CommandExecutor, TabComp
             plugin.guis().openHub(player);
             return true;
         }
+        // A trailing "house" asks for the duel against the dealer (the chat buttons use it).
+        int end = args.length;
+        boolean house = end > 2 && "house".equalsIgnoreCase(args[end - 1]);
+        if (house) {
+            end--;
+        }
         // Only the exact id counts: the remaining arguments are joined with hyphens so
         // "/mvgam play lucky wheel" ends up asking for the id "lucky-wheel".
-        String id = String.join("-", java.util.Arrays.copyOfRange(args, 1, args.length));
+        String id = String.join("-", java.util.Arrays.copyOfRange(args, 1, end));
         Game game = plugin.games().byId(id).orElse(null);
         if (game == null) {
             plugin.messages().send(player, "command.unknown-game", "game", id);
             return true;
         }
-        game.open(player);
+        if (house) {
+            game.openAgainstHouse(player);
+        } else {
+            game.open(player);
+        }
         return true;
     }
 
@@ -526,6 +536,11 @@ public final class MultiverseGamblingCommand implements CommandExecutor, TabComp
                 case "give", "take", "set", "cancel", "balance", "stats" -> filter(onlineNames(), args[1]);
                 default -> List.of();
             };
+        }
+        if (args.length == 3 && "play".equalsIgnoreCase(args[0])) {
+            Game game = plugin.games().byId(args[1]).orElse(null);
+            boolean house = game != null && game.category() == GameCategory.GROUP && game.playableAgainstHouse();
+            return house ? filter(List.of("house"), args[2]) : List.of();
         }
         if (args.length == 3 && List.of("give", "take", "set").contains(args[0].toLowerCase(Locale.ROOT))) {
             return filter(List.of("100", "1000", "10000"), args[2]);

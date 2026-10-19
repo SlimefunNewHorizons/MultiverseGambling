@@ -111,7 +111,7 @@ Curly braces are filled in by the plugin; keep them as they are:
 Panels add their own values: {pot} {multiplier} {spot} {colour} {number} {card}
 {cards} {hand} {dice} {tile} {tiles} {bombs} {alive} {revealed} {safe} {count}
 {percent} {chance} {picks} {picked} {faces} {pair} {floors} {floor} {levels}
-{steps} {marks} {path} {rows} {level} {bucket} {bullets} {chambers} {horse}
+{steps} {marks} {path} {rows} {level} {bucket} {bullets} {chambers} {laps} {horse}
 {tickets} {total} {staked} {price} {side} {result} {target} {direction} {crash}
 {list} {payouts} {leaders} {from} {to} {players} {symbol} {subcommand}
 

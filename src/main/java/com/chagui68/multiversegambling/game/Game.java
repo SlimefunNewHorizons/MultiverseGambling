@@ -84,6 +84,14 @@ public interface Game {
     void open(Player player);
 
     /**
+     * Enters the game straight against the house: what the chat button that offers it
+     * runs ({@code /mvgam play <game> house}). A game without a house duel just opens.
+     */
+    default void openAgainstHouse(Player player) {
+        open(player);
+    }
+
+    /**
      * Action fired from a chat button ({@code /mvgam action ...}). Does nothing by
      * default: only the interactive games use it.
      */

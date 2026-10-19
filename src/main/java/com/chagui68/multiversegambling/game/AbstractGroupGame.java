@@ -50,6 +50,8 @@ public abstract class AbstractGroupGame extends AbstractGame implements Ticking 
     private UUID houseDuelPlayer;
     /** Player who asked for the house from the bet selector and still has to choose. */
     private UUID houseRequested;
+    /** Who played the running round, kept for the replay buttons once the pot is paid. */
+    private final Set<UUID> roundPlayers = new LinkedHashSet<>();
 
     protected AbstractGroupGame(MultiverseGamblingPlugin plugin, GameMeta meta) {
         super(plugin, meta);
@@ -94,6 +96,40 @@ public abstract class AbstractGroupGame extends AbstractGame implements Ticking 
             return;
         }
         plugin.guis().openBetSelector(player, this, bet -> placeBet(player, bet));
+    }
+
+    /**
+     * The "against the house" chat button: the bet selector whose confirm sits the
+     * player down against the dealer. With company in the room, or with a round running,
+     * it is an ordinary seat instead.
+     */
+    @Override
+    public final void openAgainstHouse(Player player) {
+        UUID id = player.getUniqueId();
+        if (!houseDuelAvailable() || !enabled() || !player.hasPermission(permission())
+                || phase == Phase.IN_GAME) {
+            open(player);
+            return;
+        }
+        if (pot.contains(id) && pot.size() == 1 && waiting.isEmpty()) {
+            // Already staked and alone: the duel starts on the stake that is down.
+            if (houseDuelNeedsChoice()) {
+                houseRequested = id;
+                message(player, "group.house-duel.choose-first");
+            } else {
+                startHouseDuel(player);
+            }
+            return;
+        }
+        boolean othersWaiting = waiting.size() > (waiting.contains(id) ? 1 : 0);
+        if (pot.size() > 0 || othersWaiting) {
+            message(player, "group.house-duel-crowded");
+            open(player);
+            return;
+        }
+        // Queued alone for the next round: the duel takes the place of that queue.
+        waiting.remove(id);
+        plugin.guis().openBetSelector(player, this, bet -> betAgainstHouse(player, bet));
     }
 
     /**
@@ -221,11 +257,11 @@ public abstract class AbstractGroupGame extends AbstractGame implements Ticking 
             return;
         }
         player.sendMessage(plugin.messages()
-                .componentPlainFor(player, "group.house-duel.offer",
+                .componentPlainFor(player, "replay.house-offer",
                         "multiplier", Text.multiplier(houseDuelMultiplier(player)))
-                .append(Text.c("  "))
+                .append(Text.c(" "))
                 .append(chatButton(
-                        plugin.messages().forSender(player, "group.house-duel.button"),
+                        plugin.messages().forSender(player, "replay.house"),
                         "house",
                         plugin.messages().forSender(player, "group.house-duel.hover"))));
     }
@@ -361,6 +397,8 @@ public abstract class AbstractGroupGame extends AbstractGame implements Ticking 
 
     protected final void beginRound() {
         round++;
+        roundPlayers.clear();
+        roundPlayers.addAll(pot.participants());
         phase = Phase.IN_GAME;
         timer = 0;
         broadcast("group.round-starting", "round", round);
@@ -426,8 +464,24 @@ public abstract class AbstractGroupGame extends AbstractGame implements Ticking 
         houseDuelPlayer = null;
         houseRequested = null;
         onRoundEnd();
-        broadcast("group.round-finished");
+        // No separate "round over" line: the replay line that follows already says so.
+        offerReplay();
         promptWaiting();
+    }
+
+    /**
+     * Whoever just played gets one chat line to go again: another round with the room,
+     * or straight against the house, so nobody has to dig through the menus.
+     */
+    private void offerReplay() {
+        for (UUID id : roundPlayers) {
+            Player player = online(id);
+            if (player == null || waiting.contains(id)) {
+                continue;
+            }
+            player.sendMessage(replayLine(player, "replay.prompt"));
+        }
+        roundPlayers.clear();
     }
 
     /** Voids the running round and refunds all the money. */
@@ -443,6 +497,7 @@ public abstract class AbstractGroupGame extends AbstractGame implements Ticking 
         houseDuel = false;
         houseDuelPlayer = null;
         houseRequested = null;
+        roundPlayers.clear();
         onRoundEnd();
     }
 
@@ -454,7 +509,7 @@ public abstract class AbstractGroupGame extends AbstractGame implements Ticking 
                 waiting.remove(id);
                 continue;
             }
-            message(player, "group.betting-open-again", "game", name());
+            player.sendMessage(replayLine(player, "group.betting-open-again"));
         }
     }
 
@@ -540,6 +595,15 @@ public abstract class AbstractGroupGame extends AbstractGame implements Ticking 
      * on the arena is looked at from below.
      */
     protected final ArenaStage gatherArena(float pitch) {
+        int distance = plugin.config().worldAnimationsViewDistance();
+        return gatherArena((stage, index, total) -> stage.watcher(distance, pitch, index, total));
+    }
+
+    /**
+     * Same as {@link #gatherArena(float)} but gathering the room on the spots the show
+     * picks, such as the side of a roulette table.
+     */
+    protected final ArenaStage gatherArena(ArenaStage.Spot spot) {
         if (plugin.world() == null || !plugin.config().worldAnimationsEnabled()) {
             return null;
         }
@@ -555,9 +619,8 @@ public abstract class AbstractGroupGame extends AbstractGame implements Ticking 
                 audience.add(player);
             }
         }
-        int distance = plugin.config().worldAnimationsViewDistance();
         for (int index = 0; index < audience.size(); index++) {
-            audience.get(index).teleport(stage.watcher(distance, pitch, index, audience.size()));
+            audience.get(index).teleport(spot.of(stage, index, audience.size()));
         }
         return stage;
     }

@@ -4,6 +4,7 @@ import com.chagui68.multiversegambling.MultiverseGamblingPlugin;
 import com.chagui68.multiversegambling.engine.ColorWheel;
 import com.chagui68.multiversegambling.engine.ColorWheel.Outcome;
 import com.chagui68.multiversegambling.engine.Rng;
+import com.chagui68.multiversegambling.engine.RouletteTable;
 import com.chagui68.multiversegambling.fair.FairnessService;
 import com.chagui68.multiversegambling.game.AbstractGroupGame;
 import com.chagui68.multiversegambling.game.GameCategory;
@@ -11,7 +12,7 @@ import com.chagui68.multiversegambling.game.GameMeta;
 import com.chagui68.multiversegambling.gui.Gui;
 import com.chagui68.multiversegambling.world.anim.ArenaShow;
 import com.chagui68.multiversegambling.world.anim.ArenaStage;
-import com.chagui68.multiversegambling.world.anim.WheelShow;
+import com.chagui68.multiversegambling.world.anim.RouletteShow;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -39,7 +40,8 @@ import com.chagui68.multiversegambling.util.Text;
 public final class ColorRouletteGame extends AbstractGroupGame {
 
     private static final int ANNOUNCE_TICKS = 60;
-    private static final int SPIN_TICKS = 60;
+    /** Long enough to watch the ball lap the bowl and drop into its pocket. */
+    private static final int SPIN_TICKS = 100;
 
     private final Map<UUID, Outcome> choices = new LinkedHashMap<>();
     private Outcome result;
@@ -367,15 +369,37 @@ public final class ColorRouletteGame extends AbstractGroupGame {
      * Builds the wheel on the arena; {@code null} when the round has no arena to use.
      */
     private ArenaShow startWheelShow() {
-        ArenaStage stage = gatherArena();
+        ArenaStage stage = gatherArena(RouletteShow::watchSpot);
         if (stage == null) {
             return null;
         }
         List<Material> sectors = colourSectors();
-        WheelShow wheelShow = new WheelShow(plugin, stage, sectors, sectorFor(sectors, result), SPIN_TICKS)
-                .style(WheelShow.Style.ROULETTE);
+        RouletteShow wheelShow = new RouletteShow(plugin, stage, sectors, sectorFor(sectors, result), SPIN_TICKS)
+                .coloursCloth((bet, selection) -> {
+                    Outcome outcome = outcomeOf(bet, selection);
+                    return Text.strip(colourFor(null, outcome)) + "\n" + Text.multiplier(wheel().payout(outcome));
+                });
+        // Every player's chip on the colour they called.
+        for (Map.Entry<UUID, Outcome> entry : choices.entrySet()) {
+            if (!pot.contains(entry.getKey())) {
+                continue;
+            }
+            Outcome outcome = entry.getValue();
+            String name = plugin.getServer().getOfflinePlayer(entry.getKey()).getName();
+            wheelShow.bet(outcome == Outcome.GREEN ? RouletteTable.Bet.NUMBER : RouletteTable.Bet.COLOR,
+                    outcome == Outcome.BLACK ? 1 : 0, name == null ? "?" : name,
+                    plugin.economy().format(pot.amountOf(entry.getKey())));
+        }
         wheelShow.start();
         return wheelShow;
+    }
+
+    /** The colour a field of the cloth stands for. */
+    private static Outcome outcomeOf(RouletteTable.Bet bet, int selection) {
+        if (bet == RouletteTable.Bet.NUMBER) {
+            return Outcome.GREEN;
+        }
+        return selection == 0 ? Outcome.RED : Outcome.BLACK;
     }
 
     /**

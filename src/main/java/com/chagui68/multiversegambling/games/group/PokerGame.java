@@ -409,8 +409,8 @@ public final class PokerGame extends AbstractGame implements Ticking {
 
     private void offerHouse(Player player) {
         player.sendMessage(plugin.messages().componentPlainFor(player, "poker.house-offer")
-                .append(Text.c("  "))
-                .append(Text.button(label(player, "poker.house-button"), "/mvgam action house",
+                .append(Text.c(" "))
+                .append(Text.button(label(player, "replay.house"), "/mvgam action house",
                         label(player, "poker.house-hover"))));
     }
 
@@ -875,8 +875,10 @@ public final class PokerGame extends AbstractGame implements Ticking {
                 Player player = online(sitter.id);
                 if (player != null) {
                     tellKeyed(player, "poker.busted");
-                    player.sendMessage(Text.button(label(player, "poker.sit-again"), "/mvgam play poker",
-                            label(player, "poker.sit-again-hover")));
+                    player.sendMessage(plugin.messages().componentPlainFor(player, "poker.sit-again-prompt")
+                            .append(Text.c(" "))
+                            .append(Text.button(label(player, "poker.sit-again"), "/mvgam play poker",
+                                    label(player, "poker.sit-again-hover"))));
                 }
                 leave(sitter);
             } else if (sitter.leaving || sitter.away || (!sitter.bot && online(sitter.id) == null)) {
@@ -1292,7 +1294,7 @@ public final class PokerGame extends AbstractGame implements Ticking {
         }
         String text = plugin.messages().get(sitter.bot ? "poker.plate.house" : "poker.plate.player",
                 "name", sitter.name, "stack", format(at.stack() + sitter.pendingChips),
-                "status", status.toString());
+                "status", status.length() == 0 ? "" : " &8· " + status);
         show.plate(seat, Text.c(text), active, false);
     }
 

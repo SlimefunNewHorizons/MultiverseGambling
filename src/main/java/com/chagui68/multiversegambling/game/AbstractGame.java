@@ -71,6 +71,26 @@ public abstract class AbstractGame implements Game {
         plugin.messages().sendRaw(player, legacyText);
     }
 
+    /**
+     * The one "another round?" line every game sends when a round is over: a prompt, the
+     * "play again" button and, for a game that can be played against the house, the house
+     * button. Every game uses the same line, so a player always knows where to click.
+     */
+    public Component replayLine(Player player, String promptKey) {
+        Component line = plugin.messages().componentPlainFor(player, promptKey, "game", displayName(player))
+                .append(Text.c(" "))
+                .append(Text.button(plugin.messages().forSender(player, "replay.again"),
+                        "/mvgam play " + id(),
+                        plugin.messages().forSender(player, "replay.again-hover", "game", displayName(player))));
+        if (playableAgainstHouse()) {
+            line = line.append(Text.c(" "))
+                    .append(Text.button(plugin.messages().forSender(player, "replay.house"),
+                            "/mvgam play " + id() + " house",
+                            plugin.messages().forSender(player, "replay.house-hover", "game", displayName(player))));
+        }
+        return line;
+    }
+
     public void actionBar(Player player, String legacyText) {
         player.sendActionBar(Text.c(legacyText));
     }
@@ -211,6 +231,15 @@ public abstract class AbstractGame implements Game {
      * so a board or a tower standing on the arena is looked at from below.
      */
     public ArenaStage arenaFor(Player player, float pitch) {
+        int distance = plugin.config().worldAnimationsViewDistance();
+        return arenaFor(player, (stage, index, total) -> stage.watcher(distance, pitch));
+    }
+
+    /**
+     * Same as {@link #arenaFor(Player, float)} but watching from the spot the show picks,
+     * such as the side of a roulette table.
+     */
+    public ArenaStage arenaFor(Player player, ArenaStage.Spot spot) {
         if (player == null || plugin.world() == null || !plugin.config().worldAnimationsEnabled()) {
             return null;
         }
@@ -222,7 +251,7 @@ public abstract class AbstractGame implements Game {
         }
         if (plugin.config().worldAnimationsTeleport()) {
             stage.load();
-            player.teleport(stage.watcher(plugin.config().worldAnimationsViewDistance(), pitch));
+            player.teleport(spot.of(stage, 0, 1));
             return stage;
         }
         return player.getWorld() == stage.world() ? stage : null;

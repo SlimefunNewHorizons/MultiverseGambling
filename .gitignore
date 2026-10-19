@@ -4,6 +4,7 @@ target/
 .vscode/
 run/
 *.log
+graphify-out/
 
 # Estado interno de las herramientas de desarrollo, no forma parte del proyecto.
 .freebuff/

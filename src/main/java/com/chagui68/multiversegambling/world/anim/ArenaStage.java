@@ -61,6 +61,15 @@ public final class ArenaStage {
         this.frame = StageFrame.facing(CasinoLayout.entrance(arena));
     }
 
+    /**
+     * Where one of {@code total} watchers stands, for a show that wants its audience
+     * somewhere else than on the usual arc.
+     */
+    @FunctionalInterface
+    public interface Spot {
+        Location of(ArenaStage stage, int index, int total);
+    }
+
     public World world() {
         return world;
     }

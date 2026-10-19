@@ -21,7 +21,7 @@ la ruleta.
 | **Bote Común** | `jackpot` | Todos ponen dinero y las papeletas son proporcionales a lo apostado; un ganador se lo lleva todo | 2-24 | 100% − comisión |
 | **Bomba Caliente** | `hot-bomb` | La TNT pasa de mano en mano con una mecha sorteada; al que le pille queda fuera y su dinero sigue en el bote | 2-12 | 100% − comisión |
 | **Tablero de Bombas** | `bomb-board` | Tablero compartido con bombas escondidas; se destapa por turnos; el último en pie cobra | 2-12 | 100% − comisión |
-| **Ruleta Rusa** | `russian-roulette` | Por turnos cada uno aprieta el gatillo con 1 bala en 6 recámaras; el superviviente se lleva el bote | 2-8 | 100% − comisión |
+| **Ruleta Rusa** | `russian-roulette` | Por turnos cada uno aprieta el gatillo con 1 bala en 6 recámaras, una bala más cada 3 vueltas a la mesa; las cabezas de los jugadores cuelgan frente a la boca del cañón; el superviviente se lleva el bote | 2-8 | 100% − comisión |
 | **Carrera de Caballos** | `race` | 8 caballos con probabilidades publicadas; el favorito paga poco y el tapado mucho | 2-24 | 98.00% por caballo |
 | **Duelo 1v1** | `duel` | Retas a alguien por una cantidad; los dos ponen lo mismo y una moneda decide | 2 | 100% − comisión |
 | **Rifa** | `raffle` | Boletas a precio fijo y sorteo de tres premios: 70%, 20% y 10% del bote (con dos jugadores los dos premios se reparten el bote entero). Solo se cobran boletos enteros | 2-24 | 100% − comisión |
@@ -33,14 +33,16 @@ la ruleta.
 Esperar a que se llene una sala es la peor parte de un casino, así que **todos los juegos de
 grupo se pueden jugar solo contra la casa**. Con la sala vacía, el selector de apuesta muestra un
 segundo botón, **Jugar contra la casa**; además el lobby manda una oferta con botón en el chat en
-cuanto estás solo (y otra vez si los demás se van), y `/mvgam action house` hace lo mismo. Cada
-duelo tiene el mismo margen de la casa que los juegos en solitario:
+cuanto estás solo (y otra vez si los demás se van), y `/mvgam action house` hace lo mismo. Al terminar
+cada ronda, cada jugador recibe en el chat los botones **Jugar otra vez** y **Contra la casa**
+(`/mvgam play <id> house`). Cada duelo tiene el mismo margen de la casa que los juegos en solitario:
 
 - **Ruleta Rusa** — el crupier se sienta enfrente y tú disparas primero. El tambor gira una vez,
   así que el duelo lo decide dónde están las balas: con 1 bala en 6 recámaras ganas la mitad de
   las veces y la victoria paga **1.96x**, el mismo margen que cualquier otra apuesta de aquí. La
   tabla tiene pruebas: ninguna combinación de `chambers` y `bullets` devuelve más que el margen
-  de la casa.
+  de la casa. La bala extra cada 3 vueltas solo se aplica a la ronda de grupo: el duelo mantiene
+  las balas con las que se calculó su pago.
 - **Ruleta de Colores** — la ruleta paga tu color directamente (2x rojo o negro, 36x verde) en
   vez de pagarte de un bote en el que solo estás tú. El duelo empieza en cuanto eliges color.
 - **Bote Común** y **Rifa** — la casa iguala tu apuesta (o compra tantos boletos como tú) y un

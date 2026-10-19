@@ -488,6 +488,7 @@ paso.
 | `/mvgam` | Abre el menú principal con las dos pestañas |
 | `/mvgam games [solo\|group]` | Lista el catálogo con sus límites de apuesta |
 | `/mvgam play <id>` | Juega a un juego por su id exacto |
+| `/mvgam play <id> house` | Juega un juego de grupo directamente contra la casa |
 | `/mvgam action <accion>` | Punto de entrada de los **botones del chat** (shoot, horse 3, accept...) |
 | `/mvgam balance [jugador]` | Consulta el saldo |
 | `/mvgam stats [jugador]` | Estadísticas: partidas, retorno real, juego favorito |
