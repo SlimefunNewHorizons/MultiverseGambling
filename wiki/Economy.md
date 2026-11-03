@@ -37,7 +37,7 @@ internal wallet if sBank is not there, and `provider: internal` ignores every ot
 
 ## sBank bank accounts
 
-The bridge to [sBank](https://github.com/DrakesCraft-Labs) uses its public API, so the casino
+The bridge to [sBank](https://github.com/SlimefunNewHorizons) uses its public API, so the casino
 moves the same number the bank shows:
 
 - **Reads** come from the in-memory bank of online players and from the bank database for

@@ -1,4 +1,4 @@
-<p align="center"><img src="https://raw.githubusercontent.com/DrakesCraft-Labs/MultiverseGambling/main/assets/banner-es.svg" alt="MultiverseGambling" width="100%"/></p>
+<p align="center"><img src="https://raw.githubusercontent.com/SlimefunNewHorizons/MultiverseGambling/main/assets/banner-es.svg" alt="MultiverseGambling" width="100%"/></p>
 
 # Wiki de MultiverseGambling
 
@@ -15,7 +15,7 @@ casino** y **traducción dentro del juego** al inglés o al español.
 | Dependencia blanda | Vault (opcional) |
 | Autor | **Chagui68** |
 | Organización | **Drakes Labs** |
-| Repositorio | [DrakesCraft-Labs/MultiverseGambling](https://github.com/DrakesCraft-Labs/MultiverseGambling) |
+| Repositorio | [SlimefunNewHorizons/MultiverseGambling](https://github.com/SlimefunNewHorizons/MultiverseGambling) |
 
 ## Empieza por aquí
 

@@ -1,4 +1,4 @@
-<p align="center"><img src="https://raw.githubusercontent.com/DrakesCraft-Labs/MultiverseGambling/main/assets/banner.svg" alt="MultiverseGambling" width="100%"/></p>
+<p align="center"><img src="https://raw.githubusercontent.com/SlimefunNewHorizons/MultiverseGambling/main/assets/banner.svg" alt="MultiverseGambling" width="100%"/></p>
 
 # MultiverseGambling wiki
 
@@ -15,7 +15,7 @@ world** and **in-game translation** into English or Spanish.
 | Soft dependency | Vault (optional) |
 | Author | **Chagui68** |
 | Organisation | **Drakes Labs** |
-| Repository | [DrakesCraft-Labs/MultiverseGambling](https://github.com/DrakesCraft-Labs/MultiverseGambling) |
+| Repository | [SlimefunNewHorizons/MultiverseGambling](https://github.com/SlimefunNewHorizons/MultiverseGambling) |
 
 ## Start here
 

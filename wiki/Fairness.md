@@ -54,6 +54,6 @@ after it.
 ## What it does not do
 
 Provably fair does not mean the house cannot win: the edge is in the prize tables and it is
-documented (see [Real returns](https://github.com/DrakesCraft-Labs/MultiverseGambling#real-returns)).
+documented (see [Real returns](https://github.com/SlimefunNewHorizons/MultiverseGambling#real-returns)).
 What it proves is that **the outcomes are the ones the published table implies**, and that a
 player cannot be singled out with a worse roll than anybody else.

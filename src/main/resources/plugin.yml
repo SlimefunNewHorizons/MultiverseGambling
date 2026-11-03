@@ -4,7 +4,7 @@ main: com.chagui68.multiversegambling.MultiverseGamblingPlugin
 api-version: '1.21'
 authors: [ Chagui68 ]
 description: Chance and betting engine (Paper 1.21.11, 26.1 and 26.2) with 22 solo and group minigames, a casino world and in-game English or Spanish.
-website: https://github.com/DrakesCraft-Labs/MultiverseGambling
+website: https://github.com/SlimefunNewHorizons/MultiverseGambling
 softdepend: [ Vault, sBank ]
 
 commands:

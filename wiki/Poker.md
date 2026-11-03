@@ -27,7 +27,7 @@ in the middle of its pavilion, with a dealer standing behind the shoe.
 
 Poker is played with money, but you can **buy chips with items**: vanilla, **Slimefun** and
 **MultiverseCreatures** items and the items of **every Slimefun addon**, mixed in one chest. Each one is worth its value in
-[item-values.yml](https://github.com/DrakesCraft-Labs/MultiverseGambling/blob/main/src/main/resources/item-values.yml), and when you stand up you get your
+[item-values.yml](https://github.com/SlimefunNewHorizons/MultiverseGambling/blob/main/src/main/resources/item-values.yml), and when you stand up you get your
 items back first (the most valuable ones first, as long as your chips still cover them) and
 the rest as money. How the values were set:
 

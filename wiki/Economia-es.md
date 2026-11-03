@@ -37,7 +37,7 @@ interno si sBank no está, y `provider: internal` ignora a cualquier otro plugin
 
 ## Cuentas bancarias de sBank
 
-El puente con [sBank](https://github.com/DrakesCraft-Labs) usa su API pública, así que el
+El puente con [sBank](https://github.com/SlimefunNewHorizons) usa su API pública, así que el
 casino mueve el mismo número que muestra el banco:
 
 - **Las lecturas** salen del banco en memoria de los jugadores conectados y de la base de

@@ -22,7 +22,7 @@
 **Elsewhere**
 * [Troubleshooting](Troubleshooting)
 * [Development](Development)
-* [Repository](https://github.com/DrakesCraft-Labs/MultiverseGambling)
+* [Repository](https://github.com/SlimefunNewHorizons/MultiverseGambling)
 
 ---
 

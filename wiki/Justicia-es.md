@@ -56,6 +56,6 @@ posteriores.
 ## Qué no hace
 
 Verificable no significa que la casa no pueda ganar: la ventaja está en las tablas de premios y
-está documentada (ver [Retornos reales](https://github.com/DrakesCraft-Labs/MultiverseGambling/blob/main/README.es.md#retornos-reales)).
+está documentada (ver [Retornos reales](https://github.com/SlimefunNewHorizons/MultiverseGambling/blob/main/README.es.md#retornos-reales)).
 Lo que demuestra es que **los resultados son los que implica la tabla publicada**, y que a un
 jugador no se le puede dar una tirada peor que a otro.

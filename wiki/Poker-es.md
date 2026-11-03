@@ -29,7 +29,7 @@ tumbada en el centro de su pabellón, con un crupier de pie tras el sabot.
 
 El póker se juega con dinero, pero puedes **comprar fichas con ítems**: vanilla, de
 **Slimefun** y de **MultiverseCreatures** y de **todos los addons de Slimefun**, mezclados en un mismo cofre. Cada uno vale lo que
-dice [item-values.yml](https://github.com/DrakesCraft-Labs/MultiverseGambling/blob/main/src/main/resources/item-values.yml), y al levantarte recuperas primero
+dice [item-values.yml](https://github.com/SlimefunNewHorizons/MultiverseGambling/blob/main/src/main/resources/item-values.yml), y al levantarte recuperas primero
 tus ítems (los más valiosos primero, mientras tus fichas los cubran) y el resto en dinero.
 Cómo se fijaron los valores:
 

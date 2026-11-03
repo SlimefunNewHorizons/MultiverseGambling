@@ -10,7 +10,7 @@
 #
 set -euo pipefail
 
-REPO="${1:-https://github.com/DrakesCraft-Labs/MultiverseGambling.git}"
+REPO="${1:-https://github.com/SlimefunNewHorizons/MultiverseGambling.git}"
 WIKI="${REPO%.git}.wiki.git"
 SRC="$(cd "$(dirname "$0")" && pwd)"
 TMP="$(mktemp -d)"

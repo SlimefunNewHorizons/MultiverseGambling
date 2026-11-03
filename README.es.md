@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://papermc.io"><img src="https://img.shields.io/badge/Paper-1.21.11%20%C2%B7%2026.1%20%C2%B7%2026.2-1E293B?style=for-the-badge&labelColor=8B5CF6" alt="Paper 1.21.11, 26.1 and 26.2"/></a>
-  <a href="https://github.com/DrakesCraft-Labs/MultiverseGambling/actions/workflows/compatibility.yml"><img src="https://img.shields.io/github/actions/workflow/status/DrakesCraft-Labs/MultiverseGambling/compatibility.yml?branch=main&style=for-the-badge&label=1.21.11%20%C2%B7%2026.1%20%C2%B7%2026.2" alt="Version compatibility"/></a>
+  <a href="https://github.com/SlimefunNewHorizons/MultiverseGambling/actions/workflows/compatibility.yml"><img src="https://img.shields.io/github/actions/workflow/status/SlimefunNewHorizons/MultiverseGambling/compatibility.yml?branch=main&style=for-the-badge&label=1.21.11%20%C2%B7%2026.1%20%C2%B7%2026.2" alt="Version compatibility"/></a>
   <a href="https://adoptium.net"><img src="https://img.shields.io/badge/Java-21-1E293B?style=for-the-badge&labelColor=8B5CF6" alt="Java 21"/></a>
   <img src="https://img.shields.io/badge/Versi%C3%B3n-1.0.4-1E293B?style=for-the-badge&labelColor=8B5CF6" alt="Versión 1.0.4"/>
   <img src="https://img.shields.io/badge/Juegos-22-1E293B?style=for-the-badge&labelColor=C084FC" alt="22 juegos"/>
@@ -635,5 +635,5 @@ mvn test
 ---
 
 <p align="center">
-  <sub>MultiverseGambling · creado por <b>Chagui68</b> para <b>Drakes Labs</b> · <a href="https://github.com/DrakesCraft-Labs/MultiverseGambling">DrakesCraft-Labs/MultiverseGambling</a></sub>
+  <sub>MultiverseGambling · creado por <b>Chagui68</b> para <b>Drakes Labs</b> · <a href="https://github.com/SlimefunNewHorizons/MultiverseGambling">SlimefunNewHorizons/MultiverseGambling</a></sub>
 </p>

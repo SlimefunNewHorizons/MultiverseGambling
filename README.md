@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://papermc.io"><img src="https://img.shields.io/badge/Paper-1.21.11%20%C2%B7%2026.1%20%C2%B7%2026.2-1E293B?style=for-the-badge&labelColor=8B5CF6" alt="Paper 1.21.11, 26.1 and 26.2"/></a>
-  <a href="https://github.com/DrakesCraft-Labs/MultiverseGambling/actions/workflows/compatibility.yml"><img src="https://img.shields.io/github/actions/workflow/status/DrakesCraft-Labs/MultiverseGambling/compatibility.yml?branch=main&style=for-the-badge&label=1.21.11%20%C2%B7%2026.1%20%C2%B7%2026.2" alt="Version compatibility"/></a>
+  <a href="https://github.com/SlimefunNewHorizons/MultiverseGambling/actions/workflows/compatibility.yml"><img src="https://img.shields.io/github/actions/workflow/status/SlimefunNewHorizons/MultiverseGambling/compatibility.yml?branch=main&style=for-the-badge&label=1.21.11%20%C2%B7%2026.1%20%C2%B7%2026.2" alt="Version compatibility"/></a>
   <a href="https://adoptium.net"><img src="https://img.shields.io/badge/Java-21-1E293B?style=for-the-badge&labelColor=8B5CF6" alt="Java 21"/></a>
   <img src="https://img.shields.io/badge/Version-1.0.4-1E293B?style=for-the-badge&labelColor=8B5CF6" alt="Version 1.0.4"/>
   <img src="https://img.shields.io/badge/Games-22-1E293B?style=for-the-badge&labelColor=C084FC" alt="22 games"/>
@@ -116,7 +116,7 @@ Vault it uses the server economy and duplicates nothing. Control it with
 `economy.provider: auto | sbank | vault | internal`.
 
 The bridge is engine agnostic on purpose. Besides the usual Vault economy, the casino
-speaks to **[sBank](https://github.com/DrakesCraft-Labs)** bank accounts: on a server that
+speaks to **[sBank](https://github.com/SlimefunNewHorizons)** bank accounts: on a server that
 keeps the players' money in the bank, the bets and the payouts move that balance, using the
 same two-decimal rounding and the same audit log the bank itself writes. `auto` tries the
 engines in `economy.auto-order` (bank, then Vault, then the internal wallet) and always ends
@@ -624,5 +624,5 @@ mvn test
 ---
 
 <p align="center">
-  <sub>MultiverseGambling · created by <b>Chagui68</b> for <b>Drakes Labs</b> · <a href="https://github.com/DrakesCraft-Labs/MultiverseGambling">DrakesCraft-Labs/MultiverseGambling</a></sub>
+  <sub>MultiverseGambling · created by <b>Chagui68</b> for <b>Drakes Labs</b> · <a href="https://github.com/SlimefunNewHorizons/MultiverseGambling">SlimefunNewHorizons/MultiverseGambling</a></sub>
 </p>

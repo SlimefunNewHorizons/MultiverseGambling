@@ -37,7 +37,7 @@ pushes. Run it again whenever you edit a page here.
 The README and the wiki pages link to each other by relative path (`wiki/Casino-World.md`),
 so everything works from the repository view even before the wiki tab is enabled. Once the
 wiki tab exists, the same pages are also reachable as
-`https://github.com/DrakesCraft-Labs/MultiverseGambling/wiki/<Page>`.
+`https://github.com/SlimefunNewHorizons/MultiverseGambling/wiki/<Page>`.
 
 ## Language switch
 
@@ -78,7 +78,7 @@ hace commit y las sube. Vuelve a ejecutarlo cada vez que edites una página aqu�
 El README y las páginas de la wiki se enlazan entre sí por ruta relativa
 (`wiki/Mundo-Casino-es.md`), así que todo funciona desde la vista del repositorio incluso
 antes de activar la pestaña. Cuando la pestaña exista, las mismas páginas también están en
-`https://github.com/DrakesCraft-Labs/MultiverseGambling/wiki/<Pagina>`.
+`https://github.com/SlimefunNewHorizons/MultiverseGambling/wiki/<Pagina>`.
 
 ## Cambio de idioma
 
