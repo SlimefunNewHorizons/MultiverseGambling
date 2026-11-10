@@ -43,6 +43,8 @@ public final class SbankEconomy implements EconomyProvider {
     private final Method persistBank;
     private final Method getDatabase;
     private final Method getBank;
+    private final Method bankOf;   // sBank 1.5+: modality-aware lookup for online players (nullable)
+    private final boolean bankByModality; // getBank(String,String) instead of getBank(String)
     private final Method getAuditLogger;
     private final Method record;
     private final String version;
@@ -57,6 +59,8 @@ public final class SbankEconomy implements EconomyProvider {
         this.persistBank = members.persistBank();
         this.getDatabase = members.getDatabase();
         this.getBank = members.getBank();
+        this.bankOf = members.bankOf();
+        this.bankByModality = getBank != null && getBank.getParameterCount() == 2;
         this.getAuditLogger = members.getAuditLogger();
         this.record = members.record();
         this.version = String.valueOf(sbank.getDescription().getVersion());
@@ -204,8 +208,21 @@ public final class SbankEconomy implements EconomyProvider {
             return null;
         }
         try {
+            // sBank 1.5+ keys banks by "name@modality": ask it for the online player's own bank.
+            if (bankOf != null) {
+                org.bukkit.entity.Player online = Bukkit.getPlayer(playerId);
+                if (online != null) {
+                    Object bank = bankOf.invoke(null, online);
+                    if (bank != null) {
+                        return bank;
+                    }
+                }
+            }
             Map<?, ?> banks = (Map<?, ?>) getBanks.invoke(null);
             Object bank = banks == null ? null : banks.get(username);
+            if (bank == null && banks != null) {
+                bank = banks.get(username + "@survival");
+            }
             if (bank != null) {
                 return bank;
             }
@@ -213,7 +230,10 @@ public final class SbankEconomy implements EconomyProvider {
                 return null;
             }
             Object database = getDatabase.invoke(null);
-            return database == null ? null : getBank.invoke(database, username);
+            if (database == null) {
+                return null;
+            }
+            return bankByModality ? getBank.invoke(database, username, "survival") : getBank.invoke(database, username);
         } catch (Throwable error) {
             warn("find a bank account", error);
             return null;
@@ -246,7 +266,7 @@ public final class SbankEconomy implements EconomyProvider {
      * Members resolved once, so a partial sBank can be rejected before anything runs.
      */
     private record Members(Method getBanks, Method getBalance, Method setBalance, Method getUsername,
-                           Method persistBank, Method getDatabase, Method getBank,
+                           Method persistBank, Method getDatabase, Method getBank, Method bankOf,
                            Method getAuditLogger, Method record) {
 
         static Members resolve(Plugin sbank) throws ReflectiveOperationException {
@@ -263,7 +283,18 @@ public final class SbankEconomy implements EconomyProvider {
             Method getUsername = bankClass.getMethod("getUsername");
             Method persistBank = pluginClass.getMethod("persistBank", bankClass);
             Method getDatabase = pluginClass.getMethod("getDb");
-            Method getBank = databaseClass.getMethod("getBank", String.class);
+            Method getBank;
+            try {
+                getBank = databaseClass.getMethod("getBank", String.class);
+            } catch (NoSuchMethodException old) {
+                getBank = databaseClass.getMethod("getBank", String.class, String.class); // sBank 1.5+
+            }
+            Method bankOf = null;
+            try {
+                bankOf = pluginClass.getMethod("bankOf", org.bukkit.entity.Player.class);
+            } catch (NoSuchMethodException ignored) {
+                // pre-modality sBank
+            }
 
             Method getAuditLogger = null;
             Method record = null;
@@ -276,7 +307,7 @@ public final class SbankEconomy implements EconomyProvider {
                 // Older sBank without the audit module: the casino still works.
             }
             return new Members(getBanks, getBalance, setBalance, getUsername, persistBank,
-                    getDatabase, getBank, getAuditLogger, record);
+                    getDatabase, getBank, bankOf, getAuditLogger, record);
         }
     }
 }
