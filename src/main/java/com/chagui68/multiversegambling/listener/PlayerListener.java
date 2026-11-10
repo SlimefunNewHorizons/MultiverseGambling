@@ -30,6 +30,7 @@ public final class PlayerListener implements Listener {
         org.bukkit.entity.Player joined = event.getPlayer();
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
             if (joined.isOnline()) {
+                plugin.economy().recover(joined.getUniqueId());
                 plugin.items().deliverPending(joined);
             }
         }, 20L);

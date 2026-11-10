@@ -11,15 +11,32 @@ import java.util.UUID;
  */
 public class Wager {
 
-    private final EconomyManager economy;
+    private final Ledger economy;
     private final UUID playerId;
     private final double amount;
+    private final String id;
+    private final String wallet;
     private boolean settled;
 
-    Wager(EconomyManager economy, UUID playerId, double amount) {
+    Wager(Ledger economy, UUID playerId, double amount) {
+        this(economy, playerId, amount, null, null);
+    }
+
+    /**
+     * @param id     journal id of the bet, or {@code null} for a bet that is not journaled
+     * @param wallet the wallet the stake came out of: the payout goes back to the same one
+     */
+    Wager(Ledger economy, UUID playerId, double amount, String id, String wallet) {
         this.economy = economy;
         this.playerId = playerId;
         this.amount = amount;
+        this.id = id;
+        this.wallet = wallet;
+    }
+
+    /** Identifier of this round, written to the journal and to the bank audit log. */
+    public String id() {
+        return id;
     }
 
     public UUID playerId() {
@@ -55,26 +72,42 @@ public class Wager {
     /**
      * Pays an exact amount, ignoring the original bet.
      */
-    public boolean payAbsolute(double payout) {
+    public synchronized boolean payAbsolute(double payout) {
         if (settled) {
             return false;
         }
         settled = true;
-        return deliver(Math.max(0, payout));
+        double clean = Amounts.cleanPayout(payout);
+        if (Double.isNaN(clean)) {
+            // Never pay a number we cannot trust; the stake goes back instead.
+            economy.logger().severe("Invalid payout " + payout + " for bet " + id + "; refunding the stake.");
+            clean = amount;
+        }
+        boolean ok = deliver(clean);
+        economy.settled(this, clean, ok);
+        return ok;
     }
 
     /**
      * Hands the payout over: money by default, items for a bet staked with items.
      */
     protected boolean deliver(double payout) {
-        return economy.provider().deposit(playerId, payout);
+        return economy.provider().deposit(playerId, wallet, payout, id);
+    }
+
+    /** Wallet the stake came out of, or {@code null}. */
+    public String wallet() {
+        return wallet;
     }
 
     /**
      * Marks the bet as lost: the money already left the wallet.
      */
-    public void lose() {
-        settled = true;
+    public synchronized void lose() {
+        if (!settled) {
+            settled = true;
+            economy.settled(this, 0, true);
+        }
     }
 
     /**

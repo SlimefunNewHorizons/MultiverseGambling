@@ -89,6 +89,8 @@ public final class MultiverseGamblingPlugin extends JavaPlugin {
         economy.setup();
         fair = new FairnessService(this);
         items = new ItemBank(this);
+        // Bets a crash or a failed payout left unsettled go back to their owners, now and every minute.
+        getServer().getScheduler().runTaskTimer(this, () -> economy.recover(null), 20L, 1200L);
         itemValues = new com.chagui68.multiversegambling.economy.ItemValues(this);
         itemValues.load();
         stats = new StatsStore(this);

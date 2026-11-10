@@ -180,6 +180,10 @@ public final class ItemStakeGui extends Gui {
             } else if (!first.isSimilar(stack)) {
                 return new Stake(null, 0, "items.mixed");
             }
+            String bad = plugin.items().refusal(stack);
+            if (bad != null) {
+                return new Stake(null, 0, bad);
+            }
             count += stack.getAmount();
         }
         if (first == null) {

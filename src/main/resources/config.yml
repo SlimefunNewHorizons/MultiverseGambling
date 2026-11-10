@@ -27,6 +27,12 @@ economy:
   # Welcome balance for the internal wallet. Unused with sBank or Vault, which
   # hand out their own starting money.
   starting-balance: 1000
+  # Brakes for a casino that plays with real money (0 = off).
+  safety:
+    max-stake: 1000000          # hard cap of one bet, whatever the game allows
+    max-loss-per-hour: 500000   # net loss per player per rolling hour; new bets are refused above it
+    max-bets-per-10s: 12        # bets one player may start in 10 seconds
+    win-alert-per-hour: 2000000 # console alert when a player is this far ahead in an hour
 
 game:
   # Average house edge for every game. 0.02 = 2%.

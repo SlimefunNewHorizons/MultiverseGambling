@@ -171,7 +171,13 @@ public final class BetSelectorGui extends Gui {
         set(slot, item, action);
     }
 
+    private boolean confirmed;
+
     private void confirm(DoubleConsumer action) {
+        if (confirmed) {
+            return;
+        }
+        confirmed = true;
         double amount = bet;
         close();
         // The game opens its own menu right after this, and a menu opened in the same

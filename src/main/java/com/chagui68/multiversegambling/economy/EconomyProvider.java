@@ -67,4 +67,18 @@ public interface EconomyProvider {
     default double balance(UUID playerId, String wallet) {
         return balance(playerId);
     }
+
+    /**
+     * Withdraws from one specific wallet, tagging the movement with the id of the bet.
+     */
+    default boolean withdraw(UUID playerId, String wallet, double amount, String ref) {
+        return withdraw(playerId, amount);
+    }
+
+    /**
+     * Deposits into one specific wallet, tagging the movement with the id of the bet.
+     */
+    default boolean deposit(UUID playerId, String wallet, double amount, String ref) {
+        return deposit(playerId, amount);
+    }
 }

@@ -23,6 +23,11 @@ general:
   no-permission: '&cYou do not have permission to do that.'
 
 economy:
+  invalid-amount: '&cThat is not a valid bet amount.'
+  limit-stake: '&cThat bet is above the maximum the casino accepts.'
+  limit-loss: '&cYou reached the loss limit for this hour. Take a break and come back later.'
+  limit-rate: '&cYou are betting too fast. Wait a few seconds.'
+  journal-failed: '&cThe casino could not record your bet, so nothing was charged. Try again.'
   wallet-header: '&6Casino wallet: &f{wallet}&7. Your balances:'
   wallet-hint: '&7Switch with &f/mvgam wallet <name>&7 (not while you are in a game).'
   wallet-busy: '&cFinish or close your open game before changing wallet.'
@@ -556,6 +561,7 @@ poker:
       - '&eClick to confirm'
 
 command:
+  too-fast: '&cSlow down: too many commands.'
   players-only: '&cThis command is meant to be used in game.'
   unknown: '&cUnknown subcommand: &f{subcommand}&c. Try &f/mvgam menu&c.'
   play-help: '&7Play any game with &f/mvgam play <id>&7.'

@@ -46,8 +46,10 @@ public final class ItemBank {
      */
     public ItemWager wager(Player player, ItemStack item, int count) {
         UUID playerId = player.getUniqueId();
-        return new ItemWager(plugin.economy(), playerId, item, count, this,
-                () -> plugin.fair().roll(playerId));
+        String id = plugin.economy().ledger().openItems(playerId,
+                Base64.getEncoder().encodeToString(item.asOne().serializeAsBytes()), count);
+        return new ItemWager(plugin.economy().ledger(), playerId, item, count, this,
+                () -> plugin.fair().roll(playerId), id);
     }
 
     /**
@@ -60,7 +62,30 @@ public final class ItemBank {
         if (ItemMath.blocked(item.getType().name(), plugin.config().itemBetsBlocked())) {
             return "items.blocked";
         }
+        if (item.getAmount() > item.getMaxStackSize()) {
+            return "items.blocked";
+        }
+        ItemMeta meta = item.getItemMeta();
+        // A payout is a fresh copy of the staked item: anything that carries other items
+        // inside would be duplicated with its contents.
+        if (meta instanceof org.bukkit.inventory.meta.BundleMeta bundle && bundle.hasItems()) {
+            return "items.blocked";
+        }
+        if (meta instanceof org.bukkit.inventory.meta.BlockStateMeta state && state.hasBlockState()
+                && state.getBlockState() instanceof org.bukkit.inventory.InventoryHolder holder
+                && !isEmpty(holder.getInventory())) {
+            return "items.blocked";
+        }
         return null;
+    }
+
+    private static boolean isEmpty(org.bukkit.inventory.Inventory inventory) {
+        for (ItemStack content : inventory.getContents()) {
+            if (content != null && content.getType() != Material.AIR) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

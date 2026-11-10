@@ -31,6 +31,7 @@ public abstract class Gui implements InventoryHolder, SoloSession {
     private boolean opened;
     private boolean swapping;
     private boolean headless;
+    private long lastClick = Long.MIN_VALUE / 2;
 
     protected Gui(MultiverseGamblingPlugin plugin, Player player, int rows, String title) {
         this.plugin = plugin;
@@ -182,6 +183,12 @@ public abstract class Gui implements InventoryHolder, SoloSession {
     // ------------------------------------------------------------------- eventos
 
     public final void handleClick(InventoryClickEvent event) {
+        // Two clicks inside 100 ms are one: the second one never runs an action twice.
+        long now = System.nanoTime();
+        if (now - lastClick < 100_000_000L) {
+            return;
+        }
+        lastClick = now;
         Consumer<InventoryClickEvent> action = actions.get(event.getSlot());
         if (action != null) {
             action.accept(event);

@@ -63,6 +63,26 @@ public final class MultiverseGamblingConfig {
         return ranged(cfg.getDouble("game.house-edge", 0.02), 0.0, 0.5);
     }
 
+    /** Hard cap of one stake, whatever the game says (0 = off). */
+    public double maxStake() {
+        return Math.max(0, cfg.getDouble("economy.safety.max-stake", 1_000_000));
+    }
+
+    /** Net loss a player may reach per rolling hour before new bets are refused (0 = off). */
+    public double maxLossPerHour() {
+        return Math.max(0, cfg.getDouble("economy.safety.max-loss-per-hour", 500_000));
+    }
+
+    /** Bets one player may start per 10 seconds (0 = off). */
+    public int maxBetsPer10s() {
+        return Math.max(0, cfg.getInt("economy.safety.max-bets-per-10s", 12));
+    }
+
+    /** Net win per rolling hour that makes the console shout (0 = off). */
+    public double winAlertPerHour() {
+        return Math.max(0, cfg.getDouble("economy.safety.win-alert-per-hour", 2_000_000));
+    }
+
     public double minBet() {
         return Math.max(0.01, cfg.getDouble("game.min-bet", 10.0));
     }

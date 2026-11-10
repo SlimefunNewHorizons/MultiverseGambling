@@ -21,9 +21,9 @@ public final class ItemWager extends Wager {
     private final DoubleSupplier rolls;
     private int paid;
 
-    ItemWager(EconomyManager economy, UUID playerId, ItemStack item, int count, ItemBank bank,
-              DoubleSupplier rolls) {
-        super(economy, playerId, count);
+    ItemWager(Ledger ledger, UUID playerId, ItemStack item, int count, ItemBank bank,
+              DoubleSupplier rolls, String id) {
+        super(ledger, playerId, count, id, null);
         this.item = item.asOne();
         this.bank = bank;
         this.rolls = rolls;

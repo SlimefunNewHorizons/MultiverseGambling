@@ -35,6 +35,8 @@ public final class MultiverseGamblingCommand implements CommandExecutor, TabComp
             "world", "language", "info", "reload", "give", "take", "set", "cancel");
 
     private final MultiverseGamblingPlugin plugin;
+    private final com.chagui68.multiversegambling.util.RateLimiter limiter =
+            new com.chagui68.multiversegambling.util.RateLimiter(3, 1500);
 
     public MultiverseGamblingCommand(MultiverseGamblingPlugin plugin) {
         this.plugin = plugin;
@@ -57,6 +59,11 @@ public final class MultiverseGamblingCommand implements CommandExecutor, TabComp
         }
 
         String sub = args[0].toLowerCase(Locale.ROOT);
+        if (sender instanceof Player who && !who.hasPermission("mvgam_admin")
+                && !limiter.tryAcquire(who.getUniqueId(), System.currentTimeMillis())) {
+            plugin.messages().send(sender, "command.too-fast");
+            return true;
+        }
         switch (sub) {
             case "menu" -> {
                 return withPlayer(sender, player -> plugin.guis().openHub(player));
@@ -519,6 +526,10 @@ public final class MultiverseGamblingCommand implements CommandExecutor, TabComp
         try {
             amount = Double.parseDouble(args[2].replace(",", "."));
         } catch (NumberFormatException error) {
+            plugin.messages().send(sender, "command.invalid-amount", "value", args[2]);
+            return true;
+        }
+        if (!Double.isFinite(amount) || Math.abs(amount) > com.chagui68.multiversegambling.economy.Amounts.CEILING) {
             plugin.messages().send(sender, "command.invalid-amount", "value", args[2]);
             return true;
         }

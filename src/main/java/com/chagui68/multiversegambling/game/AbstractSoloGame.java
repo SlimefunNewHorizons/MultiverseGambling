@@ -84,7 +84,12 @@ public abstract class AbstractSoloGame extends AbstractGame {
      * Bet confirmation callback, ready to hand over to the menu.
      */
     protected final DoubleConsumer begin(Player player) {
-        return bet -> start(player, bet);
+        return bet -> {
+            // A double click on "confirm" must never start two rounds.
+            if (!plugin.sessions().busy(player.getUniqueId())) {
+                start(player, bet);
+            }
+        };
     }
 
     /**
@@ -105,7 +110,8 @@ public abstract class AbstractSoloGame extends AbstractGame {
         }
         Wager wager = plugin.economy().stake(player, bet);
         if (wager == null) {
-            message(player, "economy.not-enough-money", "bet", plugin.economy().format(bet));
+            String why = plugin.economy().takeRefusal();
+            message(player, why != null ? why : "economy.not-enough-money", "bet", plugin.economy().format(bet));
         }
         return wager;
     }

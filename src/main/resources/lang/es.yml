@@ -19,6 +19,11 @@ general:
   no-permission: '&cNo tienes permiso para hacer eso.'
 
 economy:
+  invalid-amount: '&cEsa no es una cantidad de apuesta valida.'
+  limit-stake: '&cEsa apuesta supera el maximo que acepta el casino.'
+  limit-loss: '&cHas llegado al limite de perdidas de esta hora. Descansa y vuelve mas tarde.'
+  limit-rate: '&cEstas apostando demasiado rapido. Espera unos segundos.'
+  journal-failed: '&cEl casino no pudo registrar tu apuesta, asi que no se cobro nada. Intentalo de nuevo.'
   wallet-header: '&6Billetera del casino: &f{wallet}&7. Tus saldos:'
   wallet-hint: '&7Cambia con &f/mvgam wallet <nombre>&7 (no mientras estas en una partida).'
   wallet-busy: '&cTermina o cierra tu partida abierta antes de cambiar de billetera.'
@@ -552,6 +557,7 @@ poker:
       - '&eClic para confirmar'
 
 command:
+  too-fast: '&cMas despacio: demasiados comandos.'
   players-only: '&cEste comando es para usarlo dentro del juego.'
   unknown: '&cSubcomando desconocido: &f{subcommand}&c. Prueba &f/mvgam menu&c.'
   play-help: '&7Juega a cualquier juego con &f/mvgam play <id>&7.'

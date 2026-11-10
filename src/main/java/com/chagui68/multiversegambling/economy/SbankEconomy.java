@@ -124,27 +124,38 @@ public final class SbankEconomy implements EconomyProvider {
 
     @Override
     public boolean set(UUID playerId, double amount) {
-        return move(playerId, amount, true, ACTION_ADMIN, "set-balance");
+        return move(playerId, wallet(playerId), amount, true, ACTION_ADMIN, "set-balance");
     }
 
     @Override
     public boolean withdraw(UUID playerId, double amount) {
+        return withdraw(playerId, wallet(playerId), amount, null);
+    }
+
+    @Override
+    public boolean withdraw(UUID playerId, String wallet, double amount, String ref) {
         if (amount <= 0) {
             return true;
         }
-        Object bank = account(playerId);
-        if (bank == null || balance(playerId) + 1e-9 < amount) {
-            return false;
-        }
-        return move(playerId, -amount, false, ACTION_STAKE, "casino-stake");
+        // move() refuses to go below zero, under the same lock that writes the balance.
+        return move(playerId, wallet, -amount, false, ACTION_STAKE, tag("casino-stake", ref));
     }
 
     @Override
     public boolean deposit(UUID playerId, double amount) {
+        return deposit(playerId, wallet(playerId), amount, null);
+    }
+
+    @Override
+    public boolean deposit(UUID playerId, String wallet, double amount, String ref) {
         if (amount <= 0) {
             return true;
         }
-        return move(playerId, amount, false, ACTION_PAYOUT, "casino-payout");
+        return move(playerId, wallet, amount, false, ACTION_PAYOUT, tag("casino-payout", ref));
+    }
+
+    private static String tag(String note, String ref) {
+        return ref == null ? note : note + "#" + ref;
     }
 
     @Override
@@ -164,32 +175,49 @@ public final class SbankEconomy implements EconomyProvider {
     /**
      * Writes the new balance, persists it and records the movement in the bank audit log.
      */
-    private boolean move(UUID playerId, double delta, boolean absolute, String action, String note) {
-        Object bank = account(playerId);
-        if (bank == null) {
+    private synchronized boolean move(UUID playerId, String wallet, double delta, boolean absolute,
+                                      String action, String note) {
+        Object bank = account(playerId, wallet);
+        if (bank == null || !Double.isFinite(delta)) {
             return false;
         }
+        double before;
         try {
-            double before = ((Number) getBalance.invoke(bank)).doubleValue();
-            double after = normalise(absolute ? delta : before + delta);
-            if (after < 0) {
-                return false;
-            }
-            if (after == before) {
-                return true;
-            }
+            // Read again right now: another plugin may have touched the bank since the stake.
+            before = ((Number) getBalance.invoke(bank)).doubleValue();
+        } catch (Throwable error) {
+            warn("read a bank balance", error);
+            return false;
+        }
+        double after = normalise(absolute ? delta : before + delta);
+        if (after < 0) {
+            return false;
+        }
+        if (after == before) {
+            return true;
+        }
+        boolean written = false;
+        try {
             setBalance.invoke(bank, after);
+            written = true;
             Object persisted = persistBank.invoke(null, bank);
             if (persisted instanceof Boolean ok && !ok) {
-                plugin.getLogger().warning("sBank could not persist a casino movement for " + name(playerId));
-                return false;
+                throw new IllegalStateException("persistBank returned false");
             }
-            audit(action, bank, playerId, Math.abs(after - before), before, after, note + "@" + wallet(playerId));
-            return true;
         } catch (Throwable error) {
+            if (written) {
+                try {
+                    setBalance.invoke(bank, before); // roll back: memory must match the database
+                } catch (Throwable ignored) {
+                    plugin.getLogger().severe("sBank balance of " + name(playerId)
+                            + " could not be rolled back to " + before + " after a failed save.");
+                }
+            }
             warn("write a bank movement", error);
             return false;
         }
+        audit(action, bank, playerId, Math.abs(after - before), before, after, note + "@" + wallet);
+        return true;
     }
 
     /**

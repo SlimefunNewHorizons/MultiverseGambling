@@ -16,9 +16,43 @@ public final class EconomyManager {
     private final MultiverseGamblingPlugin plugin;
     private EconomyProvider provider;
     private double startingBalance = 1000;
+    private Ledger ledger;
 
     public EconomyManager(MultiverseGamblingPlugin plugin) {
         this.plugin = plugin;
+    }
+
+    public MultiverseGamblingPlugin plugin() {
+        return plugin;
+    }
+
+    public Ledger ledger() {
+        if (ledger == null) {
+            var cfg = plugin.config();
+            ledger = new Ledger(() -> provider,
+                    new Journal(new java.io.File(plugin.getDataFolder(), "bet-journal")),
+                    new StakeLimits(cfg.maxStake(), cfg.maxLossPerHour(), 3_600_000L, cfg.maxBetsPer10s(), 10_000L,
+                            cfg.winAlertPerHour()),
+                    plugin.getLogger(), System::currentTimeMillis);
+        }
+        return ledger;
+    }
+
+    /**
+     * Returns to their owners the bets a crash, a kick or a failed payout left in the journal.
+     *
+     * @param only one player, or {@code null} for everybody
+     */
+    public void recover(java.util.UUID only) {
+        if (provider == null) {
+            return;
+        }
+        int n = ledger().recover(only, (player, encoded, count) ->
+                plugin.items().give(player, org.bukkit.inventory.ItemStack.deserializeBytes(
+                        java.util.Base64.getDecoder().decode(encoded)), count));
+        if (n > 0) {
+            plugin.getLogger().warning("Recovered " + n + " unsettled bet(s) from the journal.");
+        }
     }
 
     /**
@@ -92,7 +126,7 @@ public final class EconomyManager {
      * @return {@code null} when done, else the message key that explains the refusal
      */
     public String chooseWallet(Player player, String wallet) {
-        if (plugin.games().activeGameOf(player.getUniqueId()).isPresent()) {
+        if (plugin.games().activeGameOf(player.getUniqueId()).isPresent() || ledger().busy(player.getUniqueId())) {
             return "economy.wallet-busy";
         }
         return provider.setWallet(player.getUniqueId(), wallet) ? null : "economy.wallet-unknown";
@@ -125,20 +159,22 @@ public final class EconomyManager {
      * @return {@code null} when the player cannot afford it.
      */
     public Wager stake(Player player, double amount) {
-        if (amount <= 0 || !provider.has(player.getUniqueId(), amount)) {
-            return null;
-        }
-        if (!provider.withdraw(player.getUniqueId(), amount)) {
-            return null;
-        }
-        return new Wager(this, player.getUniqueId(), amount);
+        return ledger().stake(player.getUniqueId(), amount);
+    }
+
+    /**
+     * Why the last {@link #stake} was refused as a message key ({@code null} when it was only
+     * a lack of money).
+     */
+    public String takeRefusal() {
+        return ledger().takeRefusal();
     }
 
     /**
      * Creates an already charged bet (for internal payouts or tests).
      */
     public Wager wager(UUID playerId, double amount) {
-        return new Wager(this, playerId, amount);
+        return new Wager(ledger(), playerId, amount);
     }
 
     public String format(double amount) {
