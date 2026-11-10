@@ -201,4 +201,48 @@ class LedgerTest {
         assertEquals(5, ok.get());
         assertEquals(0, eco.of(p, "survival"), 1e-9);
     }
+
+    @Test
+    void pokerBuyInsDoNotCountAgainstTheLimits() {
+        eco.money.put(p + "@survival", 100000.0);
+        for (int i = 0; i < 20; i++) {
+            Wager w = ledger.hold(p, 50);
+            assertNotNull(w);
+            w.pay(1);
+        }
+        assertNotNull(ledger.stake(p, 1), "buy-ins did not fill the rate or loss window");
+    }
+
+    @Test
+    void chipsOnTheTableComeBackToTheOriginWalletAfterACrash() {
+        Wager buyIn = ledger.hold(p, 200);
+        Wager topUp = ledger.hold(p, 100);
+        assertEquals(700, eco.of(p, "survival"), 1e-9);
+        ledger.setOwed(buyIn, 450); // the stack is now worth 450 in money
+        ledger.setOwed(topUp, 0);
+        eco.current = "oneblock";
+        Ledger restarted = newLedger(file);
+        assertEquals(2, restarted.recover(null, null));
+        assertEquals(1150, eco.of(p, "survival"), 1e-9);
+        assertEquals(500, eco.of(p, "oneblock"), 1e-9, "the other wallet is untouched");
+        assertEquals(0, restarted.recover(null, null));
+    }
+
+    @Test
+    void aBuyInNotYetSavedIsRefundedAtItsStake() {
+        assertNotNull(ledger.hold(p, 300));
+        assertEquals(1, newLedger(file).recover(null, null));
+        assertEquals(1000, eco.of(p, "survival"), 1e-9);
+    }
+
+    @Test
+    void standingUpPaysOnceAndAbsorbsTheTopUps() {
+        Wager first = ledger.hold(p, 200);
+        Wager second = ledger.hold(p, 100);
+        assertTrue(first.payAbsolute(120)); // cash-out: the whole payout rides on the first
+        second.lose();
+        assertEquals(820, eco.of(p, "survival"), 1e-9);
+        assertFalse(ledger.busy(p));
+        assertEquals(0, ledger.recover(p, null));
+    }
 }

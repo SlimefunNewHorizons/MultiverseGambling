@@ -81,6 +81,7 @@ public final class PokerGame extends AbstractGame implements Ticking {
         private final String name;
         private int seat;
         private final List<Escrow> items = new ArrayList<>();
+        private final List<com.chagui68.multiversegambling.economy.Wager> buyIns = new ArrayList<>();
         private long pendingChips;
         private boolean leaving;
         private boolean away;
@@ -222,27 +223,31 @@ public final class PokerGame extends AbstractGame implements Ticking {
      *
      * @return true when the player is now at the table
      */
-    public boolean sitDown(Player player, int wanted, long moneyCents, List<Escrow> items) {
+    public boolean sitDown(Player player, int wanted, long moneyCents, List<Escrow> items,
+                           com.chagui68.multiversegambling.economy.Wager buyIn) {
         long itemCents = items.stream().mapToLong(Escrow::cents).sum();
         long chips = moneyCents + itemCents;
         UUID id = player.getUniqueId();
         if (sitters.containsKey(id)) {
             // Already seated: the purchase is a top up.
-            return topUp(player, moneyCents, items);
+            return topUp(player, moneyCents, items, buyIn);
         }
         int seat = table.seat(wanted) == null ? wanted : table.freeSeat();
         if (seat < 0 || chips <= 0) {
-            giveBack(id, moneyCents, items);
+            giveBack(id, moneyCents, items, buyIn);
             message(player, "poker.table-full");
             return false;
         }
         if (!table.sit(seat, id, chips)) {
-            giveBack(id, moneyCents, items);
+            giveBack(id, moneyCents, items, buyIn);
             message(player, "poker.table-full");
             return false;
         }
         Sitter sitter = new Sitter(id, false, player.getName(), seat);
         sitter.items.addAll(items);
+        if (buyIn != null) {
+            sitter.buyIns.add(buyIn);
+        }
         sitters.put(id, sitter);
         // The house only fills in for an empty table: a second player sends it away.
         if (humans() >= 2 && !table.handRunning()) {
@@ -266,16 +271,20 @@ public final class PokerGame extends AbstractGame implements Ticking {
         return true;
     }
 
-    private boolean topUp(Player player, long moneyCents, List<Escrow> items) {
+    private boolean topUp(Player player, long moneyCents, List<Escrow> items,
+                          com.chagui68.multiversegambling.economy.Wager buyIn) {
         Sitter sitter = sitters.get(player.getUniqueId());
         long chips = moneyCents + items.stream().mapToLong(Escrow::cents).sum();
         long room = maxBuyIn() - stackOf(sitter.id);
         if (chips <= 0 || chips > room) {
-            giveBack(sitter.id, moneyCents, items);
+            giveBack(sitter.id, moneyCents, items, buyIn);
             message(player, "poker.top-up-too-much", "max", format(Math.max(0, room)));
             return false;
         }
         sitter.items.addAll(items);
+        if (buyIn != null) {
+            sitter.buyIns.add(buyIn);
+        }
         PokerTable.Seat seat = table.seat(sitter.seat);
         if (table.handRunning() && seat.inHand()) {
             sitter.pendingChips += chips;
@@ -336,7 +345,7 @@ public final class PokerGame extends AbstractGame implements Ticking {
             unmounting = false;
         }
         if (!sitter.bot) {
-            cashOut(sitter, chips + sitter.pendingChips);
+            cashOut(sitter, chips + sitter.pendingChips, true);
         }
         refreshSeat(seat);
         if (humans() == 0) {
@@ -356,7 +365,11 @@ public final class PokerGame extends AbstractGame implements Ticking {
      * who won gets every item back plus the winnings; one who lost gets back what their
      * remaining chips are still worth.
      */
-    private void cashOut(Sitter sitter, long chips) {
+    /** What a pile of chips turns into: the items it can buy back first, the rest as money. */
+    private record Plan(long left, List<ItemStack> back, int itemsBack) {
+    }
+
+    private static Plan plan(Sitter sitter, long chips) {
         long left = Math.max(0, chips);
         List<Escrow> sorted = new ArrayList<>(sitter.items);
         sorted.sort(Comparator.comparingLong(Escrow::unitCents).reversed());
@@ -374,12 +387,34 @@ public final class PokerGame extends AbstractGame implements Ticking {
                 back.add(escrow.item().asQuantity(Math.min(max, units - given)));
             }
         }
-        if (left > 0) {
-            plugin.economy().deposit(sitter.id, left / 100.0);
+        return new Plan(left, back, itemsBack);
+    }
+
+    /**
+     * @param payMoney false after a crash: the bank part is already owed by the bet journal
+     *                 (see {@link #saveState}) and the casino pays it from there
+     */
+    private void cashOut(Sitter sitter, long chips, boolean payMoney) {
+        Plan plan = plan(sitter, chips);
+        long left = plan.left();
+        if (payMoney) {
+            if (sitter.buyIns.isEmpty()) {
+                if (left > 0) {
+                    plugin.economy().deposit(sitter.id, left / 100.0);
+                }
+            } else {
+                // The first buy-in carries the whole payout; the others are absorbed by it.
+                sitter.buyIns.get(0).payAbsolute(left / 100.0);
+                for (int i = 1; i < sitter.buyIns.size(); i++) {
+                    sitter.buyIns.get(i).lose();
+                }
+                sitter.buyIns.clear();
+            }
         }
-        if (!back.isEmpty()) {
-            plugin.items().giveStacks(sitter.id, back);
+        if (!plan.back().isEmpty()) {
+            plugin.items().giveStacks(sitter.id, plan.back());
         }
+        int itemsBack = plan.itemsBack();
         sitter.items.clear();
         Player player = online(sitter.id);
         if (player != null) {
@@ -391,8 +426,11 @@ public final class PokerGame extends AbstractGame implements Ticking {
         }
     }
 
-    private void giveBack(UUID id, long moneyCents, List<Escrow> items) {
-        if (moneyCents > 0) {
+    private void giveBack(UUID id, long moneyCents, List<Escrow> items,
+                          com.chagui68.multiversegambling.economy.Wager buyIn) {
+        if (buyIn != null) {
+            buyIn.refund();
+        } else if (moneyCents > 0) {
             plugin.economy().deposit(id, moneyCents / 100.0);
         }
         List<ItemStack> stacks = new ArrayList<>();
@@ -1438,6 +1476,11 @@ public final class PokerGame extends AbstractGame implements Ticking {
             long stack = seat == null ? 0 : (table.handRunning() && seat.inHand() ? sitter.startStack : seat.stack());
             String path = "seats." + sitter.id;
             yaml.set(path + ".chips", stack + sitter.pendingChips);
+            // The money part of those chips is what the bet journal owes if the server dies now.
+            long owed = plan(sitter, stack + sitter.pendingChips).left();
+            for (int i = 0; i < sitter.buyIns.size(); i++) {
+                plugin.economy().ledger().setOwed(sitter.buyIns.get(i), i == 0 ? owed / 100.0 : 0);
+            }
             List<Map<String, Object>> items = new ArrayList<>();
             for (Escrow escrow : sitter.items) {
                 Map<String, Object> entry = new LinkedHashMap<>();
@@ -1485,7 +1528,7 @@ public final class PokerGame extends AbstractGame implements Ticking {
                         long unit = ((Number) entry.get("unit")).longValue();
                         sitter.items.add(new Escrow(item, count, unit));
                     }
-                    cashOut(sitter, seats.getLong(key + ".chips"));
+                    cashOut(sitter, seats.getLong(key + ".chips"), false);
                     refunded++;
                 } catch (RuntimeException error) {
                     plugin.getLogger().severe("Could not refund the poker seat of " + key + ": " + error);

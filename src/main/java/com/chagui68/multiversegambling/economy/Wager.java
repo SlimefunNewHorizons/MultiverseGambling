@@ -17,6 +17,7 @@ public class Wager {
     private final String id;
     private final String wallet;
     private boolean settled;
+    boolean tracked = true;
 
     Wager(Ledger economy, UUID playerId, double amount) {
         this(economy, playerId, amount, null, null);

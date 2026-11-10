@@ -205,8 +205,13 @@ public final class PokerChipsGui extends Gui {
         Player viewer = player();
         Count count = read();
         long topUpCents = Math.max(0, lower() - count.cents());
-        if (!count.worthless().isEmpty() || count.cents() <= 0 || count.cents() > upper()
-                || (topUpCents > 0 && !plugin.economy().provider().withdraw(viewer.getUniqueId(), topUpCents / 100.0))) {
+        if (!count.worthless().isEmpty() || count.cents() <= 0 || count.cents() > upper()) {
+            viewer.playSound(viewer.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.8f, 0.7f);
+            updateInfo();
+            return;
+        }
+        var buyIn = topUpCents > 0 ? plugin.economy().ledger().hold(viewer.getUniqueId(), topUpCents / 100.0) : null;
+        if (topUpCents > 0 && buyIn == null) {
             viewer.playSound(viewer.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.8f, 0.7f);
             updateInfo();
             return;
@@ -219,9 +224,11 @@ public final class PokerChipsGui extends Gui {
         close();
         plugin.getServer().getScheduler().runTask(plugin, () -> {
             if (viewer.isOnline()) {
-                game.sitDown(viewer, seat, topUpCents, count.kinds());
+                game.sitDown(viewer, seat, topUpCents, count.kinds(), buyIn);
             } else {
-                plugin.economy().deposit(viewer.getUniqueId(), topUpCents / 100.0);
+                if (buyIn != null) {
+                    buyIn.refund();
+                }
                 List<ItemStack> back = new ArrayList<>();
                 for (PokerGame.Escrow kind : count.kinds()) {
                     int max = Math.max(1, kind.item().getMaxStackSize());

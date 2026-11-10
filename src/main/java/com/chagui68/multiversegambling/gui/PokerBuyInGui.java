@@ -137,16 +137,18 @@ public final class PokerBuyInGui extends Gui {
             refresh();
             return;
         }
-        if (!plugin.economy().provider().withdraw(viewer.getUniqueId(), amount / 100.0)) {
-            plugin.messages().send(viewer, "economy.not-enough-money", "bet", game.format(amount));
+        var buyIn = plugin.economy().ledger().hold(viewer.getUniqueId(), amount / 100.0);
+        if (buyIn == null) {
+            String why = plugin.economy().takeRefusal();
+            plugin.messages().send(viewer, why != null ? why : "economy.not-enough-money", "bet", game.format(amount));
             return;
         }
         close();
         plugin.getServer().getScheduler().runTask(plugin, () -> {
             if (viewer.isOnline()) {
-                game.sitDown(viewer, seat, amount, List.of());
+                game.sitDown(viewer, seat, amount, List.of(), buyIn);
             } else {
-                plugin.economy().deposit(viewer.getUniqueId(), amount / 100.0);
+                buyIn.refund();
             }
         });
     }

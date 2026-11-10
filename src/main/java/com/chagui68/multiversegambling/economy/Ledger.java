@@ -72,6 +72,34 @@ public final class Ledger {
      * @return the bet, or {@code null} (see {@link #takeRefusal()})
      */
     public Wager stake(UUID player, double amount) {
+        return stake(player, amount, true);
+    }
+
+    /**
+     * Takes money that is not a bet (a poker buy-in): journaled and pinned to its wallet like
+     * a bet, but it does not count against the speed and loss limits.
+     */
+    public Wager hold(UUID player, double amount) {
+        return stake(player, amount, false);
+    }
+
+    /**
+     * Sets what a journaled bet would pay back if the server died now (poker chips on the table).
+     */
+    public void setOwed(Wager wager, double amount) {
+        if (wager == null || wager.id() == null || wager.isSettled()) {
+            return;
+        }
+        synchronized (lock(wager.playerId())) {
+            try {
+                journal.owe(wager.id(), Math.max(0, amount));
+            } catch (IOException error) {
+                log.severe("Cannot update the bet journal for " + wager.id() + ": " + error.getMessage());
+            }
+        }
+    }
+
+    private Wager stake(UUID player, double amount, boolean tracked) {
         double clean = Amounts.clean(amount);
         if (Double.isNaN(clean) || clean <= 0) {
             refuse("economy.invalid-amount");
@@ -81,7 +109,7 @@ public final class Ledger {
         synchronized (lock(player)) {
             retryOwed(player, null);
             long now = clock.getAsLong();
-            String why = limits.check(player, clean, now);
+            String why = tracked ? limits.check(player, clean, now) : null;
             if (why != null) {
                 refuse(why);
                 return null;
@@ -104,8 +132,12 @@ public final class Ledger {
             synchronized (this) {
                 live.add(id);
             }
-            limits.staked(player, clean, now);
-            return new Wager(this, player, clean, id, wallet);
+            if (tracked) {
+                limits.staked(player, clean, now);
+            }
+            Wager made = new Wager(this, player, clean, id, wallet);
+            made.tracked = tracked;
+            return made;
         }
     }
 
@@ -149,8 +181,10 @@ public final class Ledger {
         }
         UUID player = wager.playerId();
         synchronized (lock(player)) {
-            limits.paid(player, paid, clock.getAsLong());
-            if (limits.winAlert(player, clock.getAsLong())) {
+            if (wager.tracked) {
+                limits.paid(player, paid, clock.getAsLong());
+            }
+            if (wager.tracked && limits.winAlert(player, clock.getAsLong())) {
                 log.warning("ALERT: " + player + " is far ahead of the house this hour (bet " + id + ").");
             }
             synchronized (this) {
