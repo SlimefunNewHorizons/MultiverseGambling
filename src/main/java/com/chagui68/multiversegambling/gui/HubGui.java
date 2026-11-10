@@ -81,7 +81,8 @@ public final class HubGui extends Gui {
         PlayerStats stats = plugin.stats().peek(viewer.getUniqueId());
         List<String> lore = new ArrayList<>(messages().loreFor(viewer, "gui.hub.balance-lore",
                 "provider", plugin.economy().provider().name(),
-                "min", plugin.economy().format(plugin.config().minBet())));
+                "min", plugin.economy().format(plugin.config().minBet()),
+                "wallet", java.util.Objects.toString(plugin.economy().wallet(viewer.getUniqueId()), "-")));
         if (stats != null && stats.games > 0) {
             lore.add("");
             lore.add(messages().forSender(viewer, "gui.hub.summary",
@@ -194,6 +195,21 @@ public final class HubGui extends Gui {
             close();
             viewer.performCommand("mvgam language");
         });
+        String wallet = plugin.economy().wallet(viewer.getUniqueId());
+        if (wallet != null) {
+            set(48, Items.of(Material.GOLD_INGOT)
+                    .name(messages().forSender(viewer, "gui.hub.wallet", "wallet", wallet))
+                    .lore(messages().loreFor(viewer, "gui.hub.wallet-lore", "wallet", wallet,
+                            "balance", plugin.economy().format(plugin.economy().balance(viewer.getUniqueId()))))
+                    .build(), e -> {
+                String next = plugin.economy().nextWallet(viewer.getUniqueId());
+                String refusal = next == null ? "economy.wallet-none" : plugin.economy().chooseWallet(viewer, next);
+                if (refusal != null) {
+                    messages().send(viewer, refusal, "wallet", String.valueOf(next));
+                }
+                render();
+            });
+        }
         set(49, Items.of(Material.BARRIER)
                 .name(messages().forSender(viewer, "gui.hub.close"))
                 .build(), e -> close());

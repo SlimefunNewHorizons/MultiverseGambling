@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 public final class MultiverseGamblingCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBS = List.of(
-            "menu", "games", "play", "action", "balance", "stats", "top", "verify",
+            "menu", "games", "play", "action", "balance", "wallet", "stats", "top", "verify",
             "world", "language", "info", "reload", "give", "take", "set", "cancel");
 
     private final MultiverseGamblingPlugin plugin;
@@ -69,6 +69,9 @@ public final class MultiverseGamblingCommand implements CommandExecutor, TabComp
             }
             case "balance" -> {
                 return balance(sender, args);
+            }
+            case "wallet" -> {
+                return wallet(sender, args);
             }
             case "stats" -> {
                 return stats(sender, args);
@@ -232,7 +235,40 @@ public final class MultiverseGamblingCommand implements CommandExecutor, TabComp
             return true;
         }
         return withPlayer(sender, player -> plugin.messages().send(player, "command.balance",
-                "balance", plugin.economy().format(plugin.economy().balance(player.getUniqueId()))));
+                "balance", plugin.economy().format(plugin.economy().balance(player.getUniqueId()))
+                        + walletSuffix(player.getUniqueId())));
+    }
+
+    private String walletSuffix(java.util.UUID id) {
+        String wallet = plugin.economy().wallet(id);
+        return wallet == null ? "" : " &7(" + wallet + ")";
+    }
+
+    /**
+     * {@code /mvgam wallet}: lists the wallets with their balance; {@code /mvgam wallet <name>} switches.
+     */
+    private boolean wallet(CommandSender sender, String[] args) {
+        return withPlayer(sender, player -> {
+            var id = player.getUniqueId();
+            if (args.length > 1) {
+                String refusal = plugin.economy().chooseWallet(player, args[1]);
+                if (refusal != null) {
+                    plugin.messages().send(player, refusal, "wallet", args[1]);
+                    return;
+                }
+            }
+            String current = plugin.economy().wallet(id);
+            if (current == null) {
+                plugin.messages().send(player, "economy.wallet-none");
+                return;
+            }
+            plugin.messages().send(player, "economy.wallet-header", "wallet", current);
+            for (String w : plugin.economy().wallets(id)) {
+                plugin.messages().sendRaw(player, (w.equals(current) ? "&a▶ &f" : "&7  ") + w + " &8- &6"
+                        + plugin.economy().format(plugin.economy().provider().balance(id, w)));
+            }
+            plugin.messages().send(player, "economy.wallet-hint");
+        });
     }
 
     private boolean stats(CommandSender sender, String[] args) {
@@ -533,6 +569,8 @@ public final class MultiverseGamblingCommand implements CommandExecutor, TabComp
                 case "verify" -> filter(List.of("<seed>"), args[1]);
                 case "world" -> filter(List.of("build", "info"), args[1]);
                 case "language" -> filter(plugin.messages().locales(), args[1]);
+                case "wallet" -> sender instanceof Player p
+                        ? filter(plugin.economy().wallets(p.getUniqueId()), args[1]) : List.of();
                 case "give", "take", "set", "cancel", "balance", "stats" -> filter(onlineNames(), args[1]);
                 default -> List.of();
             };

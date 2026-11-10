@@ -21,7 +21,7 @@ economy:
   # Engines tried when provider is auto. Put sbank first on a server that keeps the
   # players' money in the bank; put vault first to gamble with the wallet instead.
   auto-order: [sbank, vault, internal]
-  currency: coins
+  currency: "₯"
   # {amount} is the quantity and {currency} the name above.
   format: '&6{amount} &7{currency}'
   # Welcome balance for the internal wallet. Unused with sBank or Vault, which
@@ -268,7 +268,7 @@ games:
     # Pause between two hands.
     next-hand-seconds: 6
     # Share of each pot the house keeps once the flop is out (0.05 = 5%), and its cap
-    # per pot in coins (0 = no cap). Players against players: nothing by default.
+    # per pot in currency units (0 = no cap). Players against players: nothing by default.
     rake: 0.0
     rake-cap: 0
     # Rake while the house plays at the table, so its seats are not free money.

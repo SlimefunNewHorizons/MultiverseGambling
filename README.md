@@ -480,6 +480,7 @@ bomb round or a horse race can be audited from start to finish.
 | `/mvgam play <id> house` | Plays a group game straight against the house |
 | `/mvgam action <action>` | Entry point for the **chat buttons** (shoot, horse 3, accept...) |
 | `/mvgam balance [player]` | Shows the balance |
+| `/mvgam wallet [modality]` | Lists your sBank wallets (one per modality) and switches the one you bet with |
 | `/mvgam stats [player]` | Statistics: games, real return, favourite game |
 | `/mvgam top [profit\|wagered\|prize]` | Server ranking |
 | `/mvgam verify [seed]` | Fairness audit and client seed change |

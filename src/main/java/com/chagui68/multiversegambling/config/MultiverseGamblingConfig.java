@@ -31,7 +31,7 @@ public final class MultiverseGamblingConfig {
     // -------------------------------------------------------------------- economy
 
     public String currencyName() {
-        return cfg.getString("economy.currency", "coins");
+        return cfg.getString("economy.currency", "₯");
     }
 
     public String currencyFormat() {

@@ -23,6 +23,11 @@ general:
   no-permission: '&cYou do not have permission to do that.'
 
 economy:
+  wallet-header: '&6Casino wallet: &f{wallet}&7. Your balances:'
+  wallet-hint: '&7Switch with &f/mvgam wallet <name>&7 (not while you are in a game).'
+  wallet-busy: '&cFinish or close your open game before changing wallet.'
+  wallet-unknown: '&cYou have no bank account in &f{wallet}&c. Use &f/mvgam wallet&c to see yours.'
+  wallet-none: '&cThe casino is not playing with bank wallets on this server.'
   not-enough-money: '&cYou cannot afford a bet of {bet}.'
   account-created: '&7Welcome to the casino. We opened an account for you with {balance}.'
 
@@ -604,6 +609,12 @@ gui:
     world-off:
       - '&7The casino world is disabled.'
     language: '&e&lLanguage'
+    wallet: '&6Wallet: &f{wallet}'
+    wallet-lore:
+      - '&7You bet with your &f{wallet} &7bank account.'
+      - '&7Balance there: &f{balance}'
+      - ''
+      - '&eClick to switch wallet'
     language-lore:
       - '&7You read in: &f{language}'
       - ''
@@ -612,6 +623,7 @@ gui:
     balance: '&6Your balance: &f{balance}'
     balance-lore:
       - '&7Economy: &f{provider}'
+      - '&7Wallet: &f{wallet}'
       - '&7Minimum bet: &f{min}'
       - ''
       - '&7Pick a game below to start.'

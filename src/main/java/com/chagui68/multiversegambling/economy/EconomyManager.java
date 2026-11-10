@@ -3,6 +3,7 @@ package com.chagui68.multiversegambling.economy;
 import com.chagui68.multiversegambling.MultiverseGamblingPlugin;
 import com.chagui68.multiversegambling.util.Text;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.bukkit.entity.Player;
@@ -75,6 +76,38 @@ public final class EconomyManager {
 
     public boolean set(UUID playerId, double amount) {
         return provider.set(playerId, amount);
+    }
+
+    public String wallet(UUID playerId) {
+        return provider.wallet(playerId);
+    }
+
+    public List<String> wallets(UUID playerId) {
+        return provider.wallets(playerId);
+    }
+
+    /**
+     * Changes the wallet the player gambles with.
+     *
+     * @return {@code null} when done, else the message key that explains the refusal
+     */
+    public String chooseWallet(Player player, String wallet) {
+        if (plugin.games().activeGameOf(player.getUniqueId()).isPresent()) {
+            return "economy.wallet-busy";
+        }
+        return provider.setWallet(player.getUniqueId(), wallet) ? null : "economy.wallet-unknown";
+    }
+
+    /**
+     * Wallet after the current one, for the menu button.
+     */
+    public String nextWallet(UUID playerId) {
+        List<String> all = provider.wallets(playerId);
+        if (all.isEmpty()) {
+            return null;
+        }
+        int at = all.indexOf(provider.wallet(playerId));
+        return all.get((at + 1) % all.size());
     }
 
     /**

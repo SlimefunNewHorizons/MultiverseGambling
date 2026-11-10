@@ -80,4 +80,20 @@ class EconomyProvidersTest {
         assertTrue(EconomyProviders.DEFAULT_ORDER.contains(EconomyProviders.VAULT));
         assertTrue(EconomyProviders.DEFAULT_ORDER.contains(EconomyProviders.INTERNAL));
     }
+
+    @Test
+    void aProviderWithASingleWalletReportsNone() {
+        EconomyProvider single = new EconomyProvider() {
+            public String name() { return "t"; }
+            public double balance(java.util.UUID id) { return 5; }
+            public boolean set(java.util.UUID id, double a) { return false; }
+            public boolean withdraw(java.util.UUID id, double a) { return false; }
+            public boolean deposit(java.util.UUID id, double a) { return false; }
+        };
+        java.util.UUID id = java.util.UUID.randomUUID();
+        org.junit.jupiter.api.Assertions.assertNull(single.wallet(id));
+        assertTrue(single.wallets(id).isEmpty());
+        assertFalse(single.setWallet(id, "oneblock"));
+        assertEquals(5, single.balance(id, "oneblock"));
+    }
 }

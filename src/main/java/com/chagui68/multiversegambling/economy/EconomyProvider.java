@@ -1,5 +1,6 @@
 package com.chagui68.multiversegambling.economy;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -36,5 +37,34 @@ public interface EconomyProvider {
      */
     default boolean createAccountIfMissing(UUID playerId, double startingBalance) {
         return false;
+    }
+
+    /**
+     * Wallet (sBank modality) the player gambles with, or {@code null} when the engine has
+     * a single wallet.
+     */
+    default String wallet(UUID playerId) {
+        return null;
+    }
+
+    /**
+     * Wallets the player can choose from: only those with an existing bank.
+     */
+    default List<String> wallets(UUID playerId) {
+        return List.of();
+    }
+
+    /**
+     * @return true when the wallet exists and is now the one the player gambles with
+     */
+    default boolean setWallet(UUID playerId, String wallet) {
+        return false;
+    }
+
+    /**
+     * Balance of one specific wallet, 0 when it does not exist.
+     */
+    default double balance(UUID playerId, String wallet) {
+        return balance(playerId);
     }
 }

@@ -6,6 +6,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -43,7 +46,10 @@ public final class SbankEconomy implements EconomyProvider {
     private final Method persistBank;
     private final Method getDatabase;
     private final Method getBank;
-    private final Method bankOf;   // sBank 1.5+: modality-aware lookup for online players (nullable)
+    private final Method hasBank;      // sBank 1.5+: hasBank(String,String)
+    private final Method modalityOf;    // sBank 1.5+: static Modality.of(world)
+    private final Wallets choices = new Wallets();
+    private final File walletFile;
     private final boolean bankByModality; // getBank(String,String) instead of getBank(String)
     private final Method getAuditLogger;
     private final Method record;
@@ -59,8 +65,11 @@ public final class SbankEconomy implements EconomyProvider {
         this.persistBank = members.persistBank();
         this.getDatabase = members.getDatabase();
         this.getBank = members.getBank();
-        this.bankOf = members.bankOf();
-        this.bankByModality = getBank != null && getBank.getParameterCount() == 2;
+        this.hasBank = members.hasBank();
+        this.modalityOf = members.modalityOf();
+        this.walletFile = new File(plugin.getDataFolder(), "wallets");
+        choices.load(walletFile);
+        this.bankByModality = getBank != null && getBank.getParameterCount() == 2 && members.hasBank() != null;
         this.getAuditLogger = members.getAuditLogger();
         this.record = members.record();
         this.version = String.valueOf(sbank.getDescription().getVersion());
@@ -96,7 +105,12 @@ public final class SbankEconomy implements EconomyProvider {
 
     @Override
     public double balance(UUID playerId) {
-        Object bank = account(playerId);
+        return balance(playerId, wallet(playerId));
+    }
+
+    @Override
+    public double balance(UUID playerId, String wallet) {
+        Object bank = account(playerId, wallet);
         if (bank == null) {
             return 0.0;
         }
@@ -170,7 +184,7 @@ public final class SbankEconomy implements EconomyProvider {
                 plugin.getLogger().warning("sBank could not persist a casino movement for " + name(playerId));
                 return false;
             }
-            audit(action, bank, playerId, Math.abs(after - before), before, after, note);
+            audit(action, bank, playerId, Math.abs(after - before), before, after, note + "@" + wallet(playerId));
             return true;
         } catch (Throwable error) {
             warn("write a bank movement", error);
@@ -200,43 +214,88 @@ public final class SbankEconomy implements EconomyProvider {
     }
 
     /**
-     * The bank of a player: from memory when they are online, from the database when not.
+     * The bank of the wallet the player gambles with.
      */
     private Object account(UUID playerId) {
+        return account(playerId, wallet(playerId));
+    }
+
+    /**
+     * The bank of a player in one wallet: from memory when loaded, from the database when
+     * not. Never creates one, so the casino cannot mint money.
+     */
+    private Object account(UUID playerId, String wallet) {
         String username = name(playerId);
-        if (username == null) {
+        if (username == null || wallet == null) {
             return null;
         }
         try {
-            // sBank 1.5+ keys banks by "name@modality": ask it for the online player's own bank.
-            if (bankOf != null) {
-                org.bukkit.entity.Player online = Bukkit.getPlayer(playerId);
-                if (online != null) {
-                    Object bank = bankOf.invoke(null, online);
-                    if (bank != null) {
-                        return bank;
-                    }
-                }
-            }
             Map<?, ?> banks = (Map<?, ?>) getBanks.invoke(null);
-            Object bank = banks == null ? null : banks.get(username);
-            if (bank == null && banks != null) {
-                bank = banks.get(username + "@survival");
-            }
-            if (bank != null) {
+            Object bank = banks == null ? null : banks.get(bankByModality ? username + "@" + wallet : username);
+            if (bank != null || (bankByModality && hasBank == null)) {
                 return bank;
             }
-            if (getDatabase == null || getBank == null) {
+            if (getDatabase == null || getBank == null || (!bankByModality && !Wallets.SURVIVAL.equals(wallet))) {
                 return null;
             }
             Object database = getDatabase.invoke(null);
             if (database == null) {
                 return null;
             }
-            return bankByModality ? getBank.invoke(database, username, "survival") : getBank.invoke(database, username);
+            if (!bankByModality) {
+                return getBank.invoke(database, username);
+            }
+            return (Boolean) hasBank.invoke(database, username, wallet) ? getBank.invoke(database, username, wallet) : null;
         } catch (Throwable error) {
             warn("find a bank account", error);
             return null;
+        }
+    }
+
+    private boolean exists(UUID playerId, String wallet) {
+        return account(playerId, wallet) != null;
+    }
+
+    @Override
+    public String wallet(UUID playerId) {
+        if (!bankByModality) {
+            return Wallets.SURVIVAL;
+        }
+        return Wallets.pick(choices.get(playerId), worldModality(playerId), w -> exists(playerId, w));
+    }
+
+    @Override
+    public List<String> wallets(UUID playerId) {
+        List<String> out = new ArrayList<>();
+        for (String w : bankByModality ? Wallets.ECONOMIES : List.of(Wallets.SURVIVAL)) {
+            if (exists(playerId, w)) {
+                out.add(w);
+            }
+        }
+        return out;
+    }
+
+    @Override
+    public boolean setWallet(UUID playerId, String wallet) {
+        String w = Wallets.normalise(wallet);
+        if (w == null || !exists(playerId, w)) {
+            return false;
+        }
+        choices.put(playerId, w);
+        choices.save(walletFile);
+        return true;
+    }
+
+    /** Modality of the world the player is in, as sBank decides it. */
+    private String worldModality(UUID playerId) {
+        org.bukkit.entity.Player online = Bukkit.getPlayer(playerId);
+        if (online == null || modalityOf == null) {
+            return Wallets.SURVIVAL;
+        }
+        try {
+            return String.valueOf(modalityOf.invoke(null, online.getWorld().getName()));
+        } catch (Throwable error) {
+            return Wallets.SURVIVAL;
         }
     }
 
@@ -266,7 +325,8 @@ public final class SbankEconomy implements EconomyProvider {
      * Members resolved once, so a partial sBank can be rejected before anything runs.
      */
     private record Members(Method getBanks, Method getBalance, Method setBalance, Method getUsername,
-                           Method persistBank, Method getDatabase, Method getBank, Method bankOf,
+                           Method persistBank, Method getDatabase, Method getBank,
+                           Method hasBank, Method modalityOf,
                            Method getAuditLogger, Method record) {
 
         static Members resolve(Plugin sbank) throws ReflectiveOperationException {
@@ -289,11 +349,14 @@ public final class SbankEconomy implements EconomyProvider {
             } catch (NoSuchMethodException old) {
                 getBank = databaseClass.getMethod("getBank", String.class, String.class); // sBank 1.5+
             }
-            Method bankOf = null;
+            Method hasBank = null;
+            Method modalityOf = null;
             try {
-                bankOf = pluginClass.getMethod("bankOf", org.bukkit.entity.Player.class);
-            } catch (NoSuchMethodException ignored) {
-                // pre-modality sBank
+                hasBank = databaseClass.getMethod("hasBank", String.class, String.class);
+                modalityOf = Class.forName("com.spearforge.sBank.model.Modality", true, loader)
+                        .getMethod("of", String.class);
+            } catch (ReflectiveOperationException ignored) {
+                // pre-modality sBank: a single wallet
             }
 
             Method getAuditLogger = null;
@@ -307,7 +370,7 @@ public final class SbankEconomy implements EconomyProvider {
                 // Older sBank without the audit module: the casino still works.
             }
             return new Members(getBanks, getBalance, setBalance, getUsername, persistBank,
-                    getDatabase, getBank, bankOf, getAuditLogger, record);
+                    getDatabase, getBank, hasBank, modalityOf, getAuditLogger, record);
         }
     }
 }
