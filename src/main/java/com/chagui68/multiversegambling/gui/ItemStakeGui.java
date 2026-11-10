@@ -2,6 +2,7 @@ package com.chagui68.multiversegambling.gui;
 
 import com.chagui68.multiversegambling.MultiverseGamblingPlugin;
 import com.chagui68.multiversegambling.economy.ItemBank;
+import com.chagui68.multiversegambling.economy.ItemRules;
 import com.chagui68.multiversegambling.economy.ItemWager;
 import com.chagui68.multiversegambling.game.AbstractSoloGame;
 import com.chagui68.multiversegambling.game.ItemOutcome;
@@ -146,7 +147,8 @@ public final class ItemStakeGui extends Gui {
             lines.add(plugin.messages().forSender(viewer, "items.outcome-line",
                     "result", outcome.label(), "chance", chance,
                     "multiplier", Text.multiplier(outcome.multiplier()),
-                    "items", game.itemsText(stake.item(), stake.count() * outcome.multiplier())));
+                    "items", game.itemsText(stake.item(), stake.count() * outcome.multiplier() * ItemRules.retention(
+                            plugin.config().itemBetsDepositHaircut(), plugin.config().itemBetsHouseCut()))));
         }
         lines.add(plugin.messages().forSender(viewer, "items.outcome-lose", "count", stake.count(), "item", name));
         lines.add("");
@@ -195,6 +197,9 @@ public final class ItemStakeGui extends Gui {
         }
         if (count > plugin.config().itemBetsMaxItems()) {
             return new Stake(null, 0, "items.too-many");
+        }
+        if (ItemRules.betTooBig(count, plugin.itemValues().centsOf(first), plugin.config().itemBetsMaxBetValue())) {
+            return new Stake(null, 0, "items.too-valuable");
         }
         return new Stake(first.asOne(), count, null);
     }

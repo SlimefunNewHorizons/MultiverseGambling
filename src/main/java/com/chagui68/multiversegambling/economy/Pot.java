@@ -109,7 +109,7 @@ public final class Pot {
      * The whole pot for one winner.
      */
     public void payAllTo(UUID winner) {
-        payAllTo(winner, 0);
+        payAllTo(winner, economy.plugin().config().groupHouseCut());
     }
 
     /**

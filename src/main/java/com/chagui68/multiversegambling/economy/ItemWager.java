@@ -20,10 +20,13 @@ public final class ItemWager extends Wager {
     private final ItemBank bank;
     private final DoubleSupplier rolls;
     private int paid;
+    private final double retention;
+    private boolean voided;
 
     ItemWager(Ledger ledger, UUID playerId, ItemStack item, int count, ItemBank bank,
-              DoubleSupplier rolls, String id) {
+              DoubleSupplier rolls, String id, double retention) {
         super(ledger, playerId, count, id, null);
+        this.retention = retention;
         this.item = item.asOne();
         this.bank = bank;
         this.rolls = rolls;
@@ -50,9 +53,25 @@ public final class ItemWager extends Wager {
         return paid;
     }
 
+    /**
+     * A voided round gives every item back; a real result pays after the haircut and the
+     * house cut, whose items simply never exist.
+     */
+    @Override
+    public boolean refund() {
+        voided = true;
+        return super.refund();
+    }
+
+    /** Share of the payout kept after the house's bite. */
+    public double retention() {
+        return retention;
+    }
+
     @Override
     protected boolean deliver(double payout) {
-        int amount = ItemMath.roundByChance(payout, rolls.getAsDouble());
+        double due = voided ? payout : payout * retention;
+        int amount = ItemMath.roundByChance(due, rolls.getAsDouble());
         paid = amount;
         if (amount > 0) {
             bank.give(playerId(), item, amount);

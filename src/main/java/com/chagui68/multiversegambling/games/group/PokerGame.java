@@ -68,7 +68,13 @@ public final class PokerGame extends AbstractGame implements Ticking {
     /**
      * Items given for chips, kept until the player stands up.
      */
-    public record Escrow(ItemStack item, int count, long unitCents) {
+    public record Escrow(ItemStack item, int count, long unitCents, long backCents) {
+        /** For records saved before the haircut existed: both prices are the same. */
+        public Escrow(ItemStack item, int count, long unitCents) {
+            this(item, count, unitCents, unitCents);
+        }
+
+        /** Chips credited (after the haircut). */
         public long cents() {
             return unitCents * count;
         }
@@ -372,15 +378,15 @@ public final class PokerGame extends AbstractGame implements Ticking {
     private static Plan plan(Sitter sitter, long chips) {
         long left = Math.max(0, chips);
         List<Escrow> sorted = new ArrayList<>(sitter.items);
-        sorted.sort(Comparator.comparingLong(Escrow::unitCents).reversed());
+        sorted.sort(Comparator.comparingLong(Escrow::backCents).reversed());
         List<ItemStack> back = new ArrayList<>();
         int itemsBack = 0;
         for (Escrow escrow : sorted) {
-            int units = (int) Math.min(escrow.count(), escrow.unitCents() <= 0 ? 0 : left / escrow.unitCents());
+            int units = (int) Math.min(escrow.count(), escrow.backCents() <= 0 ? 0 : left / escrow.backCents());
             if (units <= 0) {
                 continue;
             }
-            left -= units * escrow.unitCents();
+            left -= units * escrow.backCents();
             itemsBack += units;
             int max = Math.max(1, escrow.item().getMaxStackSize());
             for (int given = 0; given < units; given += max) {
@@ -1487,6 +1493,7 @@ public final class PokerGame extends AbstractGame implements Ticking {
                 entry.put("item", Base64.getEncoder().encodeToString(escrow.item().serializeAsBytes()));
                 entry.put("count", escrow.count());
                 entry.put("unit", escrow.unitCents());
+                entry.put("back", escrow.backCents());
                 items.add(entry);
             }
             yaml.set(path + ".items", items);
@@ -1526,7 +1533,8 @@ public final class PokerGame extends AbstractGame implements Ticking {
                                 .decode(String.valueOf(entry.get("item"))));
                         int count = ((Number) entry.get("count")).intValue();
                         long unit = ((Number) entry.get("unit")).longValue();
-                        sitter.items.add(new Escrow(item, count, unit));
+                        long back = entry.get("back") instanceof Number n ? n.longValue() : unit;
+                        sitter.items.add(new Escrow(item, count, unit, back));
                     }
                     cashOut(sitter, seats.getLong(key + ".chips"), false);
                     refunded++;

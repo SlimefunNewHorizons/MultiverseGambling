@@ -178,6 +178,11 @@ final class CasinoDecor {
                     label(anchor, Text.c("&f&l" + name + "\n" + hint), 3.0f, Display.Billboard.CENTER, 110))));
             pieces.add(new Piece(new Location(world, x, ground + 15.0, z), true, anchor -> List.of(
                     icon(anchor, icon, 3.2f))));
+            if (game != null) {
+                // How to play, the bet limits, the house's bite: short view range, rebuilt when missing.
+                pieces.add(new Piece(new Location(world, x, ground + 3.4, z), false, anchor -> List.of(
+                        usage(anchor, game, name))));
+            }
             for (CasinoLayout.Edge edge : CasinoLayout.Edge.values()) {
                 pieces.add(gateSign(world, arena, edge, ground, name));
             }
@@ -235,6 +240,27 @@ final class CasinoDecor {
             display.setTransformation(Props.scaled(scale));
             display.setViewRange(3.0f);
         });
+    }
+
+    /**
+     * The guide board of a game: name, how to play, bet limits, the house's take, the wallet.
+     */
+    private TextDisplay usage(Location anchor, Game game, String name) {
+        var messages = plugin.messages();
+        List<String> lines = new ArrayList<>();
+        lines.add(messages.getOr("world.usage.title", "&e&l{game}", "game", name));
+        List<String> how = game.displayDescription(null);
+        for (int i = 0; i < Math.min(3, how.size()); i++) {
+            lines.add(how.get(i));
+        }
+        lines.add(messages.getOr("world.usage.bets", "&7Bet: &f{min} &7- &f{max}",
+                "min", plugin.economy().format(game.minBet()), "max", plugin.economy().format(game.maxBet())));
+        lines.add(plugin.guide().takeLine(null, game.id()));
+        lines.add(messages.getOr("world.usage.wallet", "&7Plays with your wallet: &f/mvgam wallet"));
+        lines.add(messages.getOr("world.usage.help", "&8/mvgam help {id}", "id", game.id()));
+        TextDisplay display = label(anchor, Text.c(String.join("\n", lines)), 0.8f, Display.Billboard.CENTER, 140);
+        display.setViewRange(0.2f);
+        return display;
     }
 
     private ItemDisplay icon(Location anchor, Material material, float scale) {

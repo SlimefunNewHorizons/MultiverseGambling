@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 public final class MultiverseGamblingCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUBS = List.of(
-            "menu", "games", "play", "action", "balance", "wallet", "stats", "top", "verify",
+            "menu", "games", "play", "action", "balance", "wallet", "help", "guia", "stats", "top", "verify",
             "world", "language", "info", "reload", "give", "take", "set", "cancel");
 
     private final MultiverseGamblingPlugin plugin;
@@ -76,6 +76,9 @@ public final class MultiverseGamblingCommand implements CommandExecutor, TabComp
             }
             case "balance" -> {
                 return balance(sender, args);
+            }
+            case "help", "guia" -> {
+                return help(sender, args);
             }
             case "wallet" -> {
                 return wallet(sender, args);
@@ -244,6 +247,29 @@ public final class MultiverseGamblingCommand implements CommandExecutor, TabComp
         return withPlayer(sender, player -> plugin.messages().send(player, "command.balance",
                 "balance", plugin.economy().format(plugin.economy().balance(player.getUniqueId()))
                         + walletSuffix(player.getUniqueId())));
+    }
+
+    /**
+     * {@code /mvgam help}: opens the manual as a book; {@code help <topic|game>} prints that page.
+     */
+    private boolean help(CommandSender sender, String[] args) {
+        var guide = plugin.guide();
+        if (args.length > 1) {
+            List<String> lines = guide.lines(sender, args[1]);
+            if (lines == null) {
+                plugin.messages().send(sender, "help.unknown", "topic", args[1]);
+                guide.index(sender).forEach(line -> plugin.messages().sendRaw(sender, line));
+            } else {
+                lines.forEach(line -> plugin.messages().sendRaw(sender, line));
+            }
+            return true;
+        }
+        if (sender instanceof Player player) {
+            player.openBook(guide.book(player));
+        } else {
+            guide.index(sender).forEach(line -> plugin.messages().sendRaw(sender, line));
+        }
+        return true;
     }
 
     private String walletSuffix(java.util.UUID id) {
@@ -580,6 +606,11 @@ public final class MultiverseGamblingCommand implements CommandExecutor, TabComp
                 case "verify" -> filter(List.of("<seed>"), args[1]);
                 case "world" -> filter(List.of("build", "info"), args[1]);
                 case "language" -> filter(plugin.messages().locales(), args[1]);
+                case "help", "guia" -> {
+                    List<String> names = new java.util.ArrayList<>(com.chagui68.multiversegambling.help.Guide.TOPICS);
+                    plugin.games().enabled().forEach(g -> names.add(g.id()));
+                    yield filter(names, args[1]);
+                }
                 case "wallet" -> sender instanceof Player p
                         ? filter(plugin.economy().wallets(p.getUniqueId()), args[1]) : List.of();
                 case "give", "take", "set", "cancel", "balance", "stats" -> filter(onlineNames(), args[1]);

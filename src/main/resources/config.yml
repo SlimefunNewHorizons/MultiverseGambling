@@ -73,6 +73,20 @@ item-bets:
   enabled: true
   # Most items one bet can stake (1728 = 27 stacks of 64).
   max-items: 1728
+  # The PLUGIN values every item (item-values.yml, then Slimefun recipes); the player never
+  # sets a price. An item with no price cannot be staked.
+  # Entry haircut: only this share of the value is counted when items come in, and the rest
+  # vanishes (poker chips are credited 10% short; bets pay back 10% fewer items).
+  deposit-haircut: 0.10
+  # On top, the house keeps this share of every payout. Both are real sinks: the items
+  # are never given back, to anyone.
+  house-cut: 0.05
+  # Ceilings, in currency units: one item, and the whole bet.
+  max-item-value: 5000
+  max-bet-value: 50000
+  # Data namespaces a staked item may carry (a payout is a copy of the item, so anything
+  # unknown, such as a unique owner tag, could be duplicated). Others are refused.
+  allowed-data: [slimefun, multiversecreatures]
   # Items that can never be staked: an exact name (DIAMOND), every name ending in
   # something (*_SHULKER_BOX) or starting with something (NETHERITE_*). Containers
   # are blocked by default, so nobody multiplies the contents of a box.
@@ -134,8 +148,10 @@ group:
   betting-seconds: 20
   max-players: 24
   countdown: 5
-  # Commission the house keeps from the jackpot, the raffle and dice poker.
-  house-commission: 0.0
+  # Commission the house keeps from every pot won by one player (jackpot, dice poker, duels,
+  # the bomb and revolver games). It is never paid out: it leaves the economy, which is
+  # what keeps a casino that plays with real money from inflating it.
+  house-commission: 0.03
 
   bomb-board:
     tiles: 36
@@ -274,9 +290,9 @@ games:
     # Pause between two hands.
     next-hand-seconds: 6
     # Share of each pot the house keeps once the flop is out (0.05 = 5%), and its cap
-    # per pot in currency units (0 = no cap). Players against players: nothing by default.
-    rake: 0.0
-    rake-cap: 0
+    # per pot in currency units (0 = no cap). Players against players pay it too: no table is free of a sink.
+    rake: 0.03
+    rake-cap: 50000
     # Rake while the house plays at the table, so its seats are not free money.
     house-rake: 0.05
     # How many house players sit down when somebody asks to play the house.

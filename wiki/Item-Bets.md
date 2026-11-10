@@ -88,3 +88,16 @@ item-bets:
 
 Typical extra entries: `NETHERITE_*` to keep end game gear out, `ELYTRA`, `DRAGON_EGG`, or a
 server currency item you do not want to grow.
+
+## Who sets the price, and the house's bite
+
+The plugin always values items (`item-values.yml`, then the Slimefun recipes); the player never sets a price.
+
+- An item with no price cannot be staked (`items.unpriced`). Ceilings: `item-bets.max-item-value` per item and `item-bets.max-bet-value` per bet.
+- A stack carrying data outside `item-bets.allowed-data` (default `slimefun`, `multiversecreatures`) is refused, because a payout is a copy of the item. Shulker boxes and bundles with contents are refused too.
+- `item-bets.deposit-haircut` (default 0.10): that share of the value is ignored when items come in (poker chips are credited short; the item can only be bought back at its full price).
+- `item-bets.house-cut` (default 0.05): extra share of every item payout. A voided round (shutdown, cancel) returns everything.
+- Both are real sinks: the items are never created, so they are given to nobody.
+- Pots won by one player pay `group.house-commission` (0.03) and poker `games.poker.rake` (0.03, cap 50000), so no table is free of a sink.
+
+`/mvgam help` opens the in-game manual (also in the main menu) and `/mvgam help <game|items|wallets|fair|limits>` prints a page; every pavilion shows a short guide hologram.

@@ -219,7 +219,7 @@ public final class MultiverseGamblingConfig {
     }
 
     public double groupHouseCut() {
-        return ranged(cfg.getDouble("group.house-commission", 0.0), 0.0, 0.5);
+        return ranged(cfg.getDouble("group.house-commission", 0.03), 0.0, 0.5);
     }
 
     public int bombBoardSize() {
@@ -287,6 +287,35 @@ public final class MultiverseGamblingConfig {
         return ranged(cfg.getInt("item-bets.max-items", 1728), 1, 100000);
     }
 
+    /** Share of an item's value the casino ignores when it comes in (a sink: those items vanish). */
+    public double itemBetsDepositHaircut() {
+        return ranged(cfg.getDouble("item-bets.deposit-haircut", 0.10), 0.0, 0.9);
+    }
+
+    /** Extra share of every item payout the house keeps (also a sink). */
+    public double itemBetsHouseCut() {
+        return ranged(cfg.getDouble("item-bets.house-cut", 0.05), 0.0, 0.5);
+    }
+
+    /** Most one item may be worth, in currency units (0 = off). */
+    public double itemBetsMaxItemValue() {
+        return Math.max(0, cfg.getDouble("item-bets.max-item-value", 5000));
+    }
+
+    /** Most a whole item bet may be worth, in currency units (0 = off). */
+    public double itemBetsMaxBetValue() {
+        return Math.max(0, cfg.getDouble("item-bets.max-bet-value", 50000));
+    }
+
+    /** Namespaces of item data that are understood; a stack carrying any other data is refused. */
+    public java.util.Set<String> itemBetsAllowedData() {
+        java.util.List<String> list = cfg.isList("item-bets.allowed-data")
+                ? cfg.getStringList("item-bets.allowed-data") : java.util.List.of("slimefun", "multiversecreatures");
+        java.util.Set<String> out = new java.util.HashSet<>();
+        list.forEach(v -> out.add(v.toLowerCase(java.util.Locale.ROOT)));
+        return out;
+    }
+
     /** Item types that can never be staked: exact names or *_SUFFIX / PREFIX_* families. */
     // ------------------------------------------------------------------ poker
 
@@ -307,11 +336,11 @@ public final class MultiverseGamblingConfig {
     }
 
     public double pokerRake() {
-        return ranged(cfg.getDouble("games.poker.rake", 0.0), 0.0, 0.25);
+        return ranged(cfg.getDouble("games.poker.rake", 0.03), 0.0, 0.25);
     }
 
     public double pokerRakeCap() {
-        return Math.max(0.0, cfg.getDouble("games.poker.rake-cap", 0.0));
+        return Math.max(0.0, cfg.getDouble("games.poker.rake-cap", 50000.0));
     }
 
     public double pokerHouseRake() {

@@ -71,6 +71,7 @@ public final class MultiverseGamblingPlugin extends JavaPlugin {
     private FairnessService fair;
     private ItemBank items;
     private com.chagui68.multiversegambling.economy.ItemValues itemValues;
+    private com.chagui68.multiversegambling.help.Guide guide;
     private StatsStore stats;
     private SessionManager sessions;
     private GuiManager guis;
@@ -93,6 +94,7 @@ public final class MultiverseGamblingPlugin extends JavaPlugin {
         getServer().getScheduler().runTaskTimer(this, () -> economy.recover(null), 20L, 1200L);
         itemValues = new com.chagui68.multiversegambling.economy.ItemValues(this);
         itemValues.load();
+        guide = new com.chagui68.multiversegambling.help.Guide(this);
         stats = new StatsStore(this);
         sessions = new SessionManager(this);
         guis = new GuiManager(this);
@@ -283,6 +285,10 @@ public final class MultiverseGamblingPlugin extends JavaPlugin {
     /**
      * Reference value of items, used to buy poker chips with them.
      */
+    public com.chagui68.multiversegambling.help.Guide guide() {
+        return guide;
+    }
+
     public com.chagui68.multiversegambling.economy.ItemValues itemValues() {
         return itemValues;
     }

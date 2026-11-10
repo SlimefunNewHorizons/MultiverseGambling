@@ -88,3 +88,16 @@ item-bets:
 
 Entradas habituales: `NETHERITE_*` para dejar fuera el equipo de final de juego, `ELYTRA`,
 `DRAGON_EGG` o el ítem de moneda del servidor que no quieras multiplicar.
+
+## Quien pone el precio y el mordisco de la casa
+
+El plugin siempre valora los items (`item-values.yml`, luego las recetas de Slimefun); el jugador nunca fija un precio.
+
+- Un item sin precio no se puede apostar. Techos: `item-bets.max-item-value` por item y `item-bets.max-bet-value` por apuesta.
+- Un stack con datos fuera de `item-bets.allowed-data` (por defecto `slimefun`, `multiversecreatures`) se rechaza: el pago es una copia del item.
+- `item-bets.deposit-haircut` (0.10): ese porcentaje del valor se ignora al entrar (las fichas de poker se acreditan por debajo; el item solo se recompra a precio completo).
+- `item-bets.house-cut` (0.05): comision extra de cada pago. Una ronda anulada devuelve todo.
+- Ambos son sumideros reales: esos items nunca se crean ni se reparten.
+- Botes de un ganador: `group.house-commission` (0.03); poker: `games.poker.rake` (0.03, tope 50000).
+
+`/mvgam help` (o `guia`) abre el manual dentro del juego, tambien desde el menu principal; cada pabellon muestra un holograma con su guia.

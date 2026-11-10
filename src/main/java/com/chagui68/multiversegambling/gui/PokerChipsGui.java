@@ -2,6 +2,7 @@ package com.chagui68.multiversegambling.gui;
 
 import com.chagui68.multiversegambling.MultiverseGamblingPlugin;
 import com.chagui68.multiversegambling.economy.ItemBank;
+import com.chagui68.multiversegambling.economy.ItemRules;
 import com.chagui68.multiversegambling.games.group.PokerGame;
 import com.chagui68.multiversegambling.util.Items;
 
@@ -132,19 +133,25 @@ public final class PokerChipsGui extends Gui {
                 }
                 continue;
             }
+            // Chips are credited short of the item's value (a sink); the item can only be bought
+            // back at its full price.
+            long credit = ItemRules.credit(unit, plugin.config().itemBetsDepositHaircut());
+            if (credit <= 0) {
+                continue;
+            }
             boolean merged = false;
             for (int i = 0; i < kinds.size(); i++) {
                 PokerGame.Escrow kind = kinds.get(i);
                 if (kind.item().isSimilar(stack)) {
-                    kinds.set(i, new PokerGame.Escrow(kind.item(), kind.count() + stack.getAmount(), kind.unitCents()));
+                    kinds.set(i, new PokerGame.Escrow(kind.item(), kind.count() + stack.getAmount(), kind.unitCents(), kind.backCents()));
                     merged = true;
                     break;
                 }
             }
             if (!merged) {
-                kinds.add(new PokerGame.Escrow(stack.asOne(), stack.getAmount(), unit));
+                kinds.add(new PokerGame.Escrow(stack.asOne(), stack.getAmount(), credit, unit));
             }
-            cents += unit * stack.getAmount();
+            cents += credit * stack.getAmount();
         }
         return new Count(kinds, worthless, cents);
     }

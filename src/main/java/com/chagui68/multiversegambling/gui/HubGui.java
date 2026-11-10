@@ -210,6 +210,13 @@ public final class HubGui extends Gui {
                 render();
             });
         }
+        set(50, Items.of(Material.KNOWLEDGE_BOOK)
+                .name(messages().forSender(viewer, "gui.hub.help"))
+                .lore(messages().loreFor(viewer, "gui.hub.help-lore"))
+                .build(), e -> {
+            close();
+            viewer.performCommand("mvgam help");
+        });
         set(49, Items.of(Material.BARRIER)
                 .name(messages().forSender(viewer, "gui.hub.close"))
                 .build(), e -> close());

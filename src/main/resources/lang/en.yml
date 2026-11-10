@@ -293,6 +293,11 @@ world:
   building: '&eBuilding the casino world &f{world}&e in the background; you will be told when it is done.'
   build-busy: '&eThe casino world is already being built (&f{progress}&e done).'
   # Floating boards and names in the casino world, written in the default language.
+  usage:
+    title: '&e&l{game}'
+    bets: '&7Bet: &f{min} &7- &f{max}'
+    wallet: '&7Plays with your wallet: &f/mvgam wallet'
+    help: '&8/mvgam help {id}'
   decor:
     welcome: '&fWelcome to the casino!'
     menu: '&e/mvgam menu &7- every game'
@@ -352,6 +357,8 @@ items:
   mixed: '&cOne kind of item at a time'
   blocked: '&cThat item cannot be staked'
   too-many: '&cToo many items for one bet'
+  unpriced: '&cThe casino has no price for that item, so it cannot be staked.'
+  too-valuable: '&cThat item or that bet is worth more than the casino accepts.'
   empty: '&cNothing to stake'
   outcomes: '&b&lWhat you get back'
   outcomes-empty: '&7Put items in the chest to see it.'
@@ -621,6 +628,12 @@ gui:
       - '&7Balance there: &f{balance}'
       - ''
       - '&eClick to switch wallet'
+    help: '&bCasino manual'
+    help-lore:
+      - '&7Every rule explained: games, wallets,'
+      - '&7item bets, limits and fairness.'
+      - ''
+      - '&eClick to open the book'
     language-lore:
       - '&7You read in: &f{language}'
       - ''
@@ -1173,3 +1186,51 @@ panel:
     click-pick: '&eClick to pick'
     close-lore: '&7You stay in the round with your current colour.'
 # panel keys end
+
+# The in-game manual (/mvgam help): every rule explained, with the live values of config.yml.
+help:
+  book-title: '&6Casino manual'
+  unknown: '&cThere is no help page called &f{topic}&c.'
+  index:
+    - '&6&lMultiverseGambling &7- manual'
+    - '&7Min bet &f{min}&7, max bet &f{max}&7 (each game may differ).'
+    - '&7Use &f/mvgam help <page>&7 for any page below.'
+  index-topics: '&ePages: &f{topics}'
+  index-games: '&eGames: &f{games}'
+  general:
+    - '&6&lHow the casino works'
+    - '&7/mvgam menu opens every game. Pick one, choose your bet and play.'
+    - '&7You bet REAL money from your bank account, so you can win or lose it.'
+    - '&7Every game shows its own odds and what the house keeps.'
+    - '&7/mvgam play <id> goes straight to a game.'
+  wallets:
+    - '&6&lWallets'
+    - '&7Each world mode (survival, oneblock, skyblock, onechunk, clasico, laboratorio) has its own bank account.'
+    - '&7/mvgam wallet lists yours with their balance; /mvgam wallet <name> picks the one you bet with.'
+    - '&7Winnings return to the wallet the bet came from. You cannot switch during a game.'
+  items:
+    - '&6&lBets with items'
+    - '&7The casino sets every price, never the player. An item with no price cannot be staked.'
+    - '&7Entry haircut: &f{haircut}&7 of the value is ignored when items come in.'
+    - '&7House cut: &f{cut}&7 of every payout. You get about &f{retention}&7 of what the game says.'
+    - '&7Those items vanish for good; they are not given to anyone.'
+    - '&7Limits: &f{maxitem}&7 per item, &f{maxbetitems}&7 per bet.'
+    - '&7Items carrying unknown data are refused.'
+  fair:
+    - '&6&lProvably fair'
+    - '&7Before you play the casino publishes the hash of its secret.'
+    - '&7After it, /mvgam verify <seed> lets you check every roll yourself.'
+    - '&7Nobody, staff included, can change a result.'
+  limits:
+    - '&6&lLimits that protect you'
+    - '&7Bets: min &f{min}&7, max &f{max}&7; never above &f{maxstake}&7.'
+    - '&7If you lose more than &f{maxloss}&7 in an hour you must rest.'
+    - '&7At most &f{rate}&7 bets every 10 seconds.'
+  take-edge: '&7House edge: &f{percent}&7 (built into the payouts).'
+  take-pot: '&7House commission: &f{percent}&7 of the pot the winner takes.'
+  take-rake: '&7House rake: &f{percent}&7 of each pot (&f{house}&7 when the house plays).'
+  game-title: '&6&l{game}'
+  game-bets: '&7Bet: &f{min} &7- &f{max}'
+  game-items-yes: '&7Items: accepted (see /mvgam help items).'
+  game-items-no: '&7Items: not accepted here.'
+  game-play: '&7Play: &f/mvgam play {id}'

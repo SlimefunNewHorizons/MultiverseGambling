@@ -49,7 +49,8 @@ public final class ItemBank {
         String id = plugin.economy().ledger().openItems(playerId,
                 Base64.getEncoder().encodeToString(item.asOne().serializeAsBytes()), count);
         return new ItemWager(plugin.economy().ledger(), playerId, item, count, this,
-                () -> plugin.fair().roll(playerId), id);
+                () -> plugin.fair().roll(playerId), id,
+                ItemRules.retention(plugin.config().itemBetsDepositHaircut(), plugin.config().itemBetsHouseCut()));
     }
 
     /**
@@ -76,7 +77,13 @@ public final class ItemBank {
                 && !isEmpty(holder.getInventory())) {
             return "items.blocked";
         }
-        return null;
+        // The plugin prices the item; the player never does.
+        java.util.List<String> namespaces = new ArrayList<>();
+        if (meta != null) {
+            meta.getPersistentDataContainer().getKeys().forEach(key -> namespaces.add(key.getNamespace()));
+        }
+        return ItemRules.refusal(plugin.itemValues().centsOf(item), plugin.config().itemBetsMaxItemValue(),
+                namespaces, plugin.config().itemBetsAllowedData());
     }
 
     private static boolean isEmpty(org.bukkit.inventory.Inventory inventory) {

@@ -289,6 +289,11 @@ world:
   building: '&eConstruyendo el mundo del casino &f{world}&e en segundo plano; te aviso cuando termine.'
   build-busy: '&eEl mundo del casino ya se esta construyendo (&f{progress}&e hecho).'
   # Carteles y nombres flotantes del mundo del casino, en el idioma por defecto.
+  usage:
+    title: '&e&l{game}'
+    bets: '&7Apuesta: &f{min} &7- &f{max}'
+    wallet: '&7Juega con tu billetera: &f/mvgam wallet'
+    help: '&8/mvgam help {id}'
   decor:
     welcome: '&fBienvenido al casino!'
     menu: '&e/mvgam menu &7- todos los juegos'
@@ -348,6 +353,8 @@ items:
   mixed: '&cUn solo tipo de item a la vez'
   blocked: '&cEse item no se puede apostar'
   too-many: '&cDemasiados items para una apuesta'
+  unpriced: '&cEl casino no tiene precio para ese item, asi que no se puede apostar.'
+  too-valuable: '&cEse item o esa apuesta vale mas de lo que acepta el casino.'
   empty: '&cNo hay nada que apostar'
   outcomes: '&b&lLo que recibes'
   outcomes-empty: '&7Mete items en el cofre para verlo.'
@@ -617,6 +624,12 @@ gui:
       - '&7Saldo ahi: &f{balance}'
       - ''
       - '&ePulsa para cambiar de billetera'
+    help: '&bManual del casino'
+    help-lore:
+      - '&7Cada regla explicada: juegos, billeteras,'
+      - '&7apuestas con items, limites y justicia.'
+      - ''
+      - '&ePulsa para abrir el libro'
     language-lore:
       - '&7Lees en: &f{language}'
       - ''
@@ -1177,6 +1190,54 @@ panel:
 #  falta lo que quieras traducir. La clave es el id del juego y puedes cambiar
 #  el nombre con "name" y las lineas de descripcion con "description".
 # ============================================================================
+# El manual dentro del juego (/mvgam help): cada regla explicada, con los valores reales de config.yml.
+help:
+  book-title: '&6Manual del casino'
+  unknown: '&cNo existe la pagina de ayuda &f{topic}&c.'
+  index:
+    - '&6&lMultiverseGambling &7- manual'
+    - '&7Apuesta minima &f{min}&7, maxima &f{max}&7 (cada juego puede variar).'
+    - '&7Usa &f/mvgam help <pagina>&7 para cualquiera de abajo.'
+  index-topics: '&ePaginas: &f{topics}'
+  index-games: '&eJuegos: &f{games}'
+  general:
+    - '&6&lComo funciona el casino'
+    - '&7/mvgam menu abre todos los juegos. Elige uno, tu apuesta y juega.'
+    - '&7Apuestas dinero REAL de tu cuenta bancaria: puedes ganarlo o perderlo.'
+    - '&7Cada juego muestra sus probabilidades y lo que se queda la casa.'
+    - '&7/mvgam play <id> te lleva directo a un juego.'
+  wallets:
+    - '&6&lBilleteras'
+    - '&7Cada modalidad (survival, oneblock, skyblock, onechunk, clasico, laboratorio) tiene su propia cuenta.'
+    - '&7/mvgam wallet lista las tuyas con su saldo; /mvgam wallet <nombre> elige con cual apuestas.'
+    - '&7Las ganancias vuelven a la billetera de la que salio la apuesta. No puedes cambiar en plena partida.'
+  items:
+    - '&6&lApuestas con items'
+    - '&7El casino pone todos los precios, nunca el jugador. Un item sin precio no se puede apostar.'
+    - '&7Mordisco de entrada: se ignora el &f{haircut}&7 del valor al entrar los items.'
+    - '&7Comision de la casa: &f{cut}&7 de cada pago. Recibes cerca del &f{retention}&7 de lo que dice el juego.'
+    - '&7Esos items desaparecen para siempre; no se reparten.'
+    - '&7Limites: &f{maxitem}&7 por item, &f{maxbetitems}&7 por apuesta.'
+    - '&7Los items con datos desconocidos se rechazan.'
+  fair:
+    - '&6&lJusticia verificable'
+    - '&7Antes de jugar el casino publica el hash de su secreto.'
+    - '&7Despues, /mvgam verify <semilla> te deja comprobar cada tirada.'
+    - '&7Nadie, ni el staff, puede cambiar un resultado.'
+  limits:
+    - '&6&lLimites que te protegen'
+    - '&7Apuestas: min &f{min}&7, max &f{max}&7; nunca mas de &f{maxstake}&7.'
+    - '&7Si pierdes mas de &f{maxloss}&7 en una hora toca descansar.'
+    - '&7Maximo &f{rate}&7 apuestas cada 10 segundos.'
+  take-edge: '&7Ventaja de la casa: &f{percent}&7 (incluida en los pagos).'
+  take-pot: '&7Comision de la casa: &f{percent}&7 del bote que se lleva el ganador.'
+  take-rake: '&7Rake de la casa: &f{percent}&7 de cada bote (&f{house}&7 cuando juega la casa).'
+  game-title: '&6&l{game}'
+  game-bets: '&7Apuesta: &f{min} &7- &f{max}'
+  game-items-yes: '&7Items: se aceptan (mira /mvgam help items).'
+  game-items-no: '&7Items: no se aceptan aqui.'
+  game-play: '&7Jugar: &f/mvgam play {id}'
+
 catalog:
   roulette:
     name: 'Ruleta Clasica'
