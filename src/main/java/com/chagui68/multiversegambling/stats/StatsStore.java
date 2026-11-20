@@ -33,10 +33,12 @@ public final class StatsStore {
     private final File file;
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final Map<UUID, PlayerStats> stats = new HashMap<>();
+    private final RoundLog rounds;
 
     public StatsStore(MultiverseGamblingPlugin plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "stats.json");
+        this.rounds = new RoundLog(plugin.getDataFolder());
         load();
     }
 
@@ -65,6 +67,14 @@ public final class StatsStore {
         }
         entry.biggestWin = Math.max(entry.biggestWin, payout);
         entry.biggestLoss = Math.max(entry.biggestLoss, bet - payout);
+        try {
+            var online = plugin.getServer().getPlayer(playerId);
+            rounds.append(RoundLog.line(java.time.LocalDateTime.now(), playerId, nameOf(playerId), gameId, bet, payout,
+                    online == null ? "" : online.getWorld().getName()));
+        } catch (java.io.IOException | RuntimeException error) {
+            // The history is an audit aid: never let it break a round that is already paid.
+            plugin.getLogger().warning("Could not write the round history: " + error.getMessage());
+        }
     }
 
     /**
