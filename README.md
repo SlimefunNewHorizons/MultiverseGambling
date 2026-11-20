@@ -128,6 +128,7 @@ Data files it creates:
 |---|---|
 | `balances.json` | Internal wallet (only without Vault) |
 | `stats.json` | Per player statistics and rankings |
+| `history/rounds-YYYY-MM-DD.jsonl` | One line per settled round: player, game, stake, payout, net and WIN/LOSS/PUSH (audit trail) |
 | `fairness.json` | Client seeds and the server secret for the audit |
 | `languages.json` | The language each player picked |
 | `pending-items.yml` | Item winnings waiting for a player that left mid round |

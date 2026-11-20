@@ -130,6 +130,7 @@ Archivos de datos que crea:
 |---|---|
 | `balances.json` | Monedero interno (solo sin Vault) |
 | `stats.json` | Estadísticas y rankings por jugador |
+| `history/rounds-AAAA-MM-DD.jsonl` | Una línea por ronda liquidada: jugador, juego, apuesta, pago, neto y WIN/LOSS/PUSH (auditoría) |
 | `fairness.json` | Semillas de cliente y secreto del servidor para la auditoría |
 | `languages.json` | El idioma que eligió cada jugador |
 | `pending-items.yml` | Premios en ítems de jugadores que salieron a mitad de ronda |
